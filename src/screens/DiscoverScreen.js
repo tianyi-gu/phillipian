@@ -4,6 +4,7 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  StyleSheet,
 } from "react-native";
 import React, { useEffect, useState, useReducer } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -59,13 +60,14 @@ export default function DiscoverScreen() {
           </Text>
 
           <Text
-            className="text-base text-gray-600 dark:text-neutral-300 "
+            className="text-base text-gray-600 dark:text-neutral-300"
             style={{
               fontFamily: "SpaceGroteskMedium",
             }}
           >
-            News from all over the world
+            Explore <Text style={styles.italicText}>The Phillipian's</Text> Various Sections!
           </Text>
+
         </View>
 
         {/* Search */}
@@ -130,3 +132,10 @@ export default function DiscoverScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  italicText: {
+    fontStyle: 'italic',
+    fontFamily: 'System',  // This should default to the system's italic font
+  },
+});

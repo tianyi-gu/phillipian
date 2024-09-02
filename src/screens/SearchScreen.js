@@ -55,7 +55,7 @@ export default function SearchScreen() {
           className=" font-medium text-black tracking-wider p-3 py-1 w-[90%] "
         />
         <TouchableOpacity onPress={() => navigation.navigate("Home")}>
-          <XMarkIcon size="25" color="green" strokeWidth={3} />
+          <XMarkIcon size="25" color="white" strokeWidth={3} />
         </TouchableOpacity>
       </View>
 

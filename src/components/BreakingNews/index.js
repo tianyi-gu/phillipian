@@ -1,7 +1,7 @@
-import { View, Text, Dimensions } from "react-native";
 import React from "react";
+import { View, Dimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import Carousal from "react-native-snap-carousel";
+import Carousel from "react-native-snap-carousel";
 import BreakingNewsCard from "./BreakingNewsCard";
 
 var { width } = Dimensions.get("window");
@@ -15,8 +15,7 @@ export default function BreakingNews({ data, label }) {
 
   return (
     <View>
-      {/* Carousal */}
-      <Carousal
+      <Carousel
         data={data}
         renderItem={({ item }) => (
           <BreakingNewsCard item={item} handleClick={handleClick} />

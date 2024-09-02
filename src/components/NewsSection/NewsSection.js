@@ -3,12 +3,21 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, Image, FlatList } from "react-native";
 import { BookmarkSquareIcon } from "react-native-heroicons/solid";
-import { heightPercentageToDP as hp } from "react-native-responsive-screen";
+import { heightPercentageToDP as hp, widthPercentageToDP as wp } from "react-native-responsive-screen";
+
+import coverImage from '../../../assets/images/plippaper.png';
 
 export default function NewsSection({ newsProps }) {
   const navigation = useNavigation();
   const [urlList, setUrlList] = useState([]);
   const [bookmarkStatus, setBookmarkStatus] = useState([]);
+
+  // Function to safely get text content
+  const getTextContent = (content) => {
+    if (typeof content === 'string') return content;
+    if (content && typeof content === 'object' && content.rendered) return content.rendered;
+    return '';
+  };
 
   // Function to format the date
   function formatDate(isoDate) {
@@ -24,7 +33,7 @@ export default function NewsSection({ newsProps }) {
 
   // Hook to set the URL list
   useEffect(() => {
-    const urls = newsProps.map((item) => item.url);
+    const urls = newsProps.map((item) => item.link);
     setUrlList(urls);
   }, [newsProps]);
 
@@ -41,7 +50,7 @@ export default function NewsSection({ newsProps }) {
 
       // Check if the article is already in the bookmarked list
       const isArticleBookmarked = savedArticlesArray.some(
-        (savedArticle) => savedArticle.url === item.url
+        (savedArticle) => savedArticle.link === item.link
       );
 
       if (!isArticleBookmarked) {
@@ -57,7 +66,7 @@ export default function NewsSection({ newsProps }) {
       } else {
         // If the article is already bookmarked, remove it from the list
         const updatedSavedArticlesArray = savedArticlesArray.filter(
-          (savedArticle) => savedArticle.url !== item.url
+          (savedArticle) => savedArticle.link !== item.link
         );
         await AsyncStorage.setItem(
           "savedArticles",
@@ -98,55 +107,60 @@ export default function NewsSection({ newsProps }) {
     }, [navigation, urlList]) // Include 'navigation' in the dependencies array if needed
   );
 
+  // Function to get the image source
+  const getImageSource = (item) => {
+    if (item.jetpack_featured_media_url) {
+      return { uri: item.jetpack_featured_media_url };
+    }
+    
+    if (item.yoast_head_json && item.yoast_head_json.og_image && item.yoast_head_json.og_image[0] && item.yoast_head_json.og_image[0].url) {
+      return { uri: item.yoast_head_json.og_image[0].url };
+    }
+    
+    return coverImage;
+  };
+
   // Component to render each item in the list
   const renderItem = ({ item, index }) => {
+    const imageSource = getImageSource(item);
+    
     return (
       <TouchableOpacity
         className="mb-4 mx-4 space-y-1"
         key={index}
         onPress={() => handleClick(item)}
       >
-        <View className="flex-row justify-start w-[100%]shadow-sm">
-          {/* Image */}
-          <View className="items-start justify-start w-[20%]">
-            <Image
-              source={{
-                uri:
-                  item.urlToImage ||
-                  "https://images.unsplash.com/photo-1495020689067-958852a7765e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bmV3c3xlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60",
-              }}
-              style={{ width: hp(9), height: hp(10) }}
-              resizeMode="cover"
-              className="rounded-lg"
-            />
-          </View>
-
-          {/* Content */}
-
-          <View className="w-[70%] pl-4 justify-center space-y-1">
+        <View className="flex-row justify-start w-[100%] shadow-sm">
+          <Image
+            source={imageSource}
+            style={{
+              width: wp(20),
+              height: wp(20),
+              borderRadius: 8,
+              marginRight: wp(4),
+            }}
+            resizeMode="cover"
+          />
+          <View className="w-[70%] justify-center space-y-1">
             {/* Author */}
             <Text className="text-xs font-bold text-gray-900 dark:text-neutral-300">
-              {item?.author?.length > 20
-                ? item.author.slice(0, 20) + "..."
-                : item.author}
+              {getTextContent(item?.author_info?.display_name).slice(0, 20)}
             </Text>
 
             {/* Title */}
             <Text
-              className="text-neutral-800 capitalize max-w-[90%] dark:text-white "
+              className="text-neutral-800 dark:text-white "
               style={{
                 fontSize: hp(1.7),
                 fontFamily: "SpaceGroteskBold",
               }}
             >
-              {item.title.length > 50
-                ? item.title.slice(0, 50) + "..."
-                : item.title}
+              {getTextContent(item.title)}
             </Text>
 
             {/* Date */}
             <Text className="text-xs text-gray-700 dark:text-neutral-300">
-              {formatDate(item.publishedAt)}
+              {formatDate(item.date)}
             </Text>
           </View>
 
@@ -156,7 +170,7 @@ export default function NewsSection({ newsProps }) {
               onPress={() => toggleBookmarkAndSave(item, index)}
             >
               <BookmarkSquareIcon
-                color={bookmarkStatus[index] ? "green" : "gray"}
+                color={bookmarkStatus[index] ? "white" : "gray"}
               />
             </TouchableOpacity>
           </View>

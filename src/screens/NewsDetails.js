@@ -105,7 +105,7 @@ export default function NewsDetails() {
           >
             <BookmarkSquareIcon
               size={25}
-              color={isBookmarked ? "green" : "gray"}
+              color={isBookmarked ? "white" : "gray"}
               strokeWidth={2}
             />
           </TouchableOpacity>
@@ -121,7 +121,7 @@ export default function NewsDetails() {
       {visible && (
         <ActivityIndicator
           size={"large"}
-          color={"green"}
+          color={"white"}
           style={{
             position: "absolute",
             top: height / 2,
