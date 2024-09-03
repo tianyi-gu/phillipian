@@ -1,55 +1,62 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  StyleSheet,
-} from "react-native";
-import React, { useEffect, useState, useReducer } from "react";
+import React, { useState, useCallback } from "react";
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "nativewind";
 import { StatusBar } from "expo-status-bar";
 import Loading from "../components/Loading/Loading";
 import { useQuery } from "@tanstack/react-query";
-import { categories } from "../constants";
 import CategoriesCard from "../components/CategoriesCard";
 import NewsSection from "../components/NewsSection/NewsSection";
 import { MagnifyingGlassIcon } from "react-native-heroicons/outline";
-import { fetchDiscoverNews } from "../../utils/NewsApi";
-import { heightPercentageToDP as hp } from "react-native-responsive-screen";
 import { useNavigation } from "@react-navigation/native";
+import axios from 'axios';
+
+const categories = [
+  { id: 2, title: "News" },
+  { id: 4, title: "Sports" },
+  { id: 5, title: "Arts" },
+  { id: 3, title: "Commentary" },
+  { id: 8, title: "Editorial" },
+  { id: 106, title: "Multilingual" },
+];
 
 export default function DiscoverScreen() {
-  const { colorScheme, toggleColorScheme } = useColorScheme();
-  const [activeCategory, setActiveCategory] = useState("business");
+  const { colorScheme } = useColorScheme();
+  const [activeCategory, setActiveCategory] = useState(categories[0]);
   const navigation = useNavigation();
-  const [withoutRemoved, setWithoutRemoved] = useState([]);
 
-  useEffect(() => {}, [activeCategory]);
+  const fetchWordPressCategoryNews = useCallback(async () => {
+    console.log('Fetching news for category:', activeCategory.title);
+    const url = `https://phillipian.net/wp-json/wp/v2/posts?categories=${activeCategory.id}&per_page=10`;
+    console.log('Fetching URL:', url);
+    const response = await axios.get(url);
+    // console.log('API response:', response.data);
+    return response.data;
+  }, [activeCategory]);
 
-  const { data: discoverNew, isLoading: isDiscoverLoading } = useQuery({
-    queryKey: ["discoverNews", activeCategory],
-    queryFn: () => fetchDiscoverNews(activeCategory),
+  const { data: categoryNews, isLoading: isCategoryNewsLoading, error } = useQuery({
+    queryKey: ["categoryNews", activeCategory.id],
+    queryFn: fetchWordPressCategoryNews,
+    enabled: !!activeCategory,
   });
 
-  const handleChangeCategory = (category) => {
-    setActiveCategory(category);
-
-    const filteredArticles = discoverNew?.articles.filter(
-      (article) => article.title !== "[Removed]"
-    );
-
-    setWithoutRemoved(filteredArticles || []);
-  };
+  const handleChangeCategory = useCallback((categoryTitle) => {
+    const newCategory = categories.find(cat => cat.title === categoryTitle);
+    if (newCategory) {
+      console.log('Changing to category:', newCategory);
+      setActiveCategory(newCategory);
+    } else {
+      console.error('Category not found:', categoryTitle);
+    }
+  }, []);
 
   return (
-    <SafeAreaView className="pt-8 bg-white dark:bg-neutral-900">
+    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">
       <StatusBar style={colorScheme == "dark" ? "light" : "dark"} />
 
-      <View>
+      <ScrollView>
         {/* Header */}
-        <View className="px-4 mb-6 justify-between">
+        <View className="px-4 mb-6 justify-between pt-6">
           <Text
             className="text-3xl text-green-800 dark:text-white"
             style={{
@@ -67,7 +74,6 @@ export default function DiscoverScreen() {
           >
             Explore <Text style={styles.italicText}>The Phillipian's</Text> Various Sections!
           </Text>
-
         </View>
 
         {/* Search */}
@@ -77,58 +83,43 @@ export default function DiscoverScreen() {
           </TouchableOpacity>
           <TextInput
             onPressIn={() => navigation.navigate("Search")}
-            placeholder="Search for news"
+            placeholder="Search"
             placeholderTextColor={"gray"}
             className="pl-4 flex-1 font-medium text-black tracking-wider"
           />
         </View>
 
         {/* Categories */}
-        <View className="flex-row mx-4">
+        <View className="flex-row mx-4 mb-4">
           <CategoriesCard
             categories={categories}
-            activeCategory={activeCategory}
+            activeCategory={activeCategory.title}
             handleChangeCategory={handleChangeCategory}
           />
         </View>
 
-        <View className="h-full">
-          {/* Header Title */}
-          <View className="my-4 mx-4 flex-row justify-between items-center">
-            <Text
-              className="text-xl dark:text-white"
-              style={{
-                fontFamily: "SpaceGroteskBold",
-              }}
-            >
-              Discover
-            </Text>
+        {/* Category News */}
+        <View className="px-4">
+          <Text
+            className="text-xl mb-4 dark:text-white"
+            style={{
+              fontFamily: "SpaceGroteskBold",
+            }}
+          >
+            {activeCategory.title}
+          </Text>
 
-            {/* <Text
-              className="text-base text-green-800 dark:text-neutral-300"
-              style={{
-                fontFamily: "SpaceGroteskBold",
-              }}
-            >
-              View all
-            </Text> */}
-          </View>
-
-          {isDiscoverLoading ? (
-            <View className="justify-center items-center">
-              <Loading />
-            </View>
+          {isCategoryNewsLoading ? (
+            <Loading />
+          ) : error ? (
+            <Text>Error loading news: {error.message}</Text>
+          ) : categoryNews && categoryNews.length > 0 ? (
+            <NewsSection newsProps={categoryNews} />
           ) : (
-            <ScrollView
-              contentContainerStyle={{
-                paddingBottom: hp(70),
-              }}
-            >
-              <NewsSection newsProps={withoutRemoved} label="Discovery" />
-            </ScrollView>
+            <Text>No articles available for this category.</Text>
           )}
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -136,6 +127,6 @@ export default function DiscoverScreen() {
 const styles = StyleSheet.create({
   italicText: {
     fontStyle: 'italic',
-    fontFamily: 'System',  // This should default to the system's italic font
+    fontFamily: 'System',
   },
 });

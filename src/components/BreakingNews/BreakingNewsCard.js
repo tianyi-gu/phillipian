@@ -32,24 +32,24 @@ export default function BreakingNewsCard({ item, handleClick }) {
 
   // Function to get the image source
   const getImageSource = () => {
-    console.log('Item:', JSON.stringify(item, null, 2));
+    // console.log('Item:', JSON.stringify(item, null, 2));
     
     if (item.jetpack_featured_media_url) {
-      console.log('Using jetpack_featured_media_url:', item.jetpack_featured_media_url);
+      // console.log('Using jetpack_featured_media_url:', item.jetpack_featured_media_url);
       return { uri: item.jetpack_featured_media_url };
     }
     
     if (item.yoast_head_json && item.yoast_head_json.og_image && item.yoast_head_json.og_image[0] && item.yoast_head_json.og_image[0].url) {
-      console.log('Using og_image:', item.yoast_head_json.og_image[0].url);
+      // console.log('Using og_image:', item.yoast_head_json.og_image[0].url);
       return { uri: item.yoast_head_json.og_image[0].url };
     }
     
-    console.log('No image found, using cover image');
+    // console.log('No image found, using cover image');
     return coverImage;
   };
 
   const imageSource = getImageSource();
-  console.log('Final image source:', imageSource);
+  // console.log('Final image source:', imageSource);
 
   return (
     <TouchableWithoutFeedback onPress={() => handleClick(item)}>

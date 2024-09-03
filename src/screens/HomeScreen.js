@@ -24,16 +24,16 @@ export default function HomeScreen() {
   const { data: breakingNews, isLoading: isBreakingLoading } = useQuery({
     queryKey: ["breakingNews"],
     queryFn: fetchWordPressBreakingNews,
-    onSuccess: (data) => console.log("Breaking News data:", data),
-    onError: (error) => console.error("Breaking News error:", error),
+    // onSuccess: (data) => console.log("Breaking News data:", data),
+    // onError: (error) => console.error("Breaking News error:", error),
   });
 
   // Recommended News
   const { data: recommendedNews, isLoading: isRecommendedLoading } = useQuery({
     queryKey: ["recommendedNews"],
     queryFn: fetchWordPressRecommendedNews,
-    onSuccess: (data) => console.log("Recommended News data:", data),
-    onError: (error) => console.error("Recommended News error:", error),
+    // onSuccess: (data) => console.log("Recommended News data:", data),
+    // onError: (error) => console.error("Recommended News error:", error),
   });
 
   return (

@@ -1,6 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import React from "react";
-import { categoryData } from "../constants";
 import { heightPercentageToDP as hp } from "react-native-responsive-screen";
 
 export default function CategoriesCard({
@@ -19,7 +18,7 @@ export default function CategoriesCard({
         }}
       >
         {categories.map((category, index) => {
-          let isActive = category.title == activeCategory;
+          let isActive = category.title === activeCategory;
           let activeButtonClass = isActive
             ? "bg-green-700 "
             : "bg-black/10 dark:bg-neutral-400 ";
