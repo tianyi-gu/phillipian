@@ -2,7 +2,11 @@
 
 Welcome to _The Phillipian_ vol. CXLVII's Mobile App
 
-(to be released on web store)
+developed and maintained by Tianyi Gu, Managing Editor, CXLVII
+
+(to be released on iOS and Android web store)
+Access _The Phillipian's_ online website [here](https://phillipian.net)!
+
 
 # Runnning Locally
 
@@ -22,6 +26,4 @@ Install the [Expo app](https://expo.io) on your phone and scan the generated QR 
 
 #### `npm run ios/npm run android`
 
-Opens app on iOS or Android Simulator if installed
-
-Access _The Phillipian's_ online website [here](https://phillipian.net)!
+Opens app on iOS or Android Simulator (installation needed)
