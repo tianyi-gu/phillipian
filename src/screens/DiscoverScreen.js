@@ -13,10 +13,10 @@ import axios from 'axios';
 
 const categories = [
   { id: 2, title: "News" },
-  { id: 4, title: "Sports" },
-  { id: 5, title: "Arts" },
   { id: 3, title: "Commentary" },
   { id: 8, title: "Editorial" },
+  { id: 5, title: "Arts" },
+  { id: 4, title: "Sports" },
   { id: 106, title: "Multilingual" },
 ];
 
