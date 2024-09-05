@@ -10,6 +10,7 @@ import NewsSection from "../components/NewsSection/NewsSection";
 import { MagnifyingGlassIcon } from "react-native-heroicons/outline";
 import { useNavigation } from "@react-navigation/native";
 import axios from 'axios';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 const categories = [
   { id: 2, title: "News" },
@@ -24,21 +25,40 @@ export default function DiscoverScreen() {
   const { colorScheme } = useColorScheme();
   const [activeCategory, setActiveCategory] = useState(categories[0]);
   const navigation = useNavigation();
+  const [page, setPage] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const fetchWordPressCategoryNews = useCallback(async () => {
-    console.log('Fetching news for category:', activeCategory.title);
-    const url = `https://phillipian.net/wp-json/wp/v2/posts?categories=${activeCategory.id}&per_page=10`;
+  const fetchWordPressCategoryNews = useCallback(async ({ pageParam = 1 }) => {
+    console.log('Fetching news for category:', activeCategory.title, 'page:', pageParam);
+    const url = `https://phillipian.net/wp-json/wp/v2/posts?categories=${activeCategory.id}&per_page=10&page=${pageParam}`;
     console.log('Fetching URL:', url);
     const response = await axios.get(url);
-    // console.log('API response:', response.data);
     return response.data;
   }, [activeCategory]);
 
-  const { data: categoryNews, isLoading: isCategoryNewsLoading, error } = useQuery({
+  const fetchMoreNews = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: isCategoryNewsLoading,
+    error
+  } = useInfiniteQuery({
     queryKey: ["categoryNews", activeCategory.id],
     queryFn: fetchWordPressCategoryNews,
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === 10 ? allPages.length + 1 : undefined;
+    },
     enabled: !!activeCategory,
   });
+
+  const categoryNews = data ? data.pages.flat() : [];
 
   const handleChangeCategory = useCallback((categoryTitle) => {
     const newCategory = categories.find(cat => cat.title === categoryTitle);
@@ -54,7 +74,7 @@ export default function DiscoverScreen() {
     <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">
       <StatusBar style={colorScheme == "dark" ? "light" : "dark"} />
 
-      <ScrollView>
+      <View className="flex-1">
         {/* Header */}
         <View className="px-4 mb-6 justify-between pt-6">
           <Text
@@ -99,7 +119,7 @@ export default function DiscoverScreen() {
         </View>
 
         {/* Category News */}
-        <View className="px-4">
+        <View className="px-4 flex-1">
           <Text
             className="text-xl mb-4 dark:text-white"
             style={{
@@ -114,12 +134,12 @@ export default function DiscoverScreen() {
           ) : error ? (
             <Text>Error loading news: {error.message}</Text>
           ) : categoryNews && categoryNews.length > 0 ? (
-            <NewsSection newsProps={categoryNews} />
+            <NewsSection newsProps={categoryNews} onEndReached={fetchMoreNews} />
           ) : (
             <Text>No articles available for this category.</Text>
           )}
         </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }

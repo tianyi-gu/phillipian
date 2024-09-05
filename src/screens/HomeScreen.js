@@ -1,5 +1,5 @@
 import { fetchWordPressBreakingNews, fetchWordPressRecommendedNews } from "../../utils/NewsApi";
-import { View, ScrollView } from "react-native";
+import { View, FlatList } from "react-native";
 import React, { useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "nativewind";
@@ -29,49 +29,59 @@ export default function HomeScreen() {
   });
 
   // Recommended News
-  const { data: recommendedNews, isLoading: isRecommendedLoading } = useQuery({
-    queryKey: ["recommendedNews"],
-    queryFn: fetchWordPressRecommendedNews,
-    // onSuccess: (data) => console.log("Recommended News data:", data),
-    // onError: (error) => console.error("Recommended News error:", error),
+  const { 
+    data: recommendedNews, 
+    isLoading: isRecommendedLoading, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage 
+  } = useQuery({
+    queryKey: ["recommendedNews", page],
+    queryFn: () => fetchWordPressRecommendedNews(page),
+    getNextPageParam: (lastPage, pages) => lastPage.length === 10 ? pages.length + 1 : undefined,
   });
+
+  const [page, setPage] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const loadMoreNews = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
+
+  const getNewsItems = () => {
+    if (!recommendedNews) return [];
+    return recommendedNews.pages ? recommendedNews.pages.flat() : recommendedNews;
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">
       <StatusBar style={colorScheme == "dark" ? "light" : "dark"} />
-
-      <View>
-        {/* Header */}
-        <Header />
-
-        {/* Breaking News */}
-        {isBreakingLoading ? (
-          <Loading />
-        ) : (
-          <View>
-            <MiniHeader label="This Month's Top Stories" />
-            <BreakingNews label="Breaking News" data={breakingNews} />
-          </View>
-        )}
-
-        {/* Recommended News */}
-        <View>
-          <MiniHeader label="Recommended" />
-          <ScrollView
-            contentContainerStyle={{
-              paddingBottom: hp(80),
-            }}
-          >
-            {isRecommendedLoading ? (
+      <FlatList
+        ListHeaderComponent={
+          <>
+            <Header />
+            {isBreakingLoading ? (
               <Loading />
             ) : (
-              <NewsSection
-                newsProps={recommendedNews}
-              />
+              <View>
+                <MiniHeader label="This Month's Top Stories" />
+                <BreakingNews label="Breaking News" data={breakingNews} />
+              </View>
             )}
-          </ScrollView>
-        </View>
-      </View>
+            <MiniHeader label="Recommended" />
+          </>
+        }
+        data={getNewsItems()}
+        renderItem={({ item }) => <NewsSection newsProps={[item]} />}
+        keyExtractor={(item, index) => item.id.toString() + index}
+        ListEmptyComponent={isRecommendedLoading ? <Loading /> : null}
+        contentContainerStyle={{ paddingBottom: hp(80) }}
+        onEndReached={loadMoreNews}
+        onEndReachedThreshold={0.1}
+        ListFooterComponent={isFetchingNextPage ? <Loading /> : null}
+      />
     </SafeAreaView>
   );
 }

@@ -7,7 +7,7 @@ import { heightPercentageToDP as hp, widthPercentageToDP as wp } from "react-nat
 
 import coverImage from '../../../assets/images/plippaper.png';
 
-export default function NewsSection({ newsProps }) {
+export default function NewsSection({ newsProps, onEndReached }) {
   const navigation = useNavigation();
   const [urlList, setUrlList] = useState([]);
   const [bookmarkStatus, setBookmarkStatus] = useState([]);
@@ -185,11 +185,12 @@ export default function NewsSection({ newsProps }) {
 
       <FlatList
         nestedScrollEnabled={true}
-        scrollEnabled={false}
         data={newsProps}
         showsVerticalScrollIndicator={false}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(item, index) => item.id.toString() + index}
         renderItem={renderItem}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.1}
       />
     </View>
   );
