@@ -28,6 +28,7 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "newArchEnabled": true
   }
 }

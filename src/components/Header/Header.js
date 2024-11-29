@@ -1,6 +1,6 @@
 import { Image, Switch, Text, TouchableOpacity, View, Dimensions } from "react-native";
 import React from "react";
-import { BellIcon, MagnifyingGlassIcon } from "react-native-heroicons/outline";
+import { BellIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useNavigation } from "@react-navigation/native";
 import { useColorScheme } from "nativewind";
 

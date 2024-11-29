@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { heightPercentageToDP as hp } from "react-native-responsive-screen";
-import { BookmarkSquareIcon } from "react-native-heroicons/solid";
+import { BookmarkSquareIcon } from "@heroicons/react/24/solid";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "nativewind";
 import coverImage from '../../assets/images/plippaper.png';

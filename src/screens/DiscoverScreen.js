@@ -7,7 +7,7 @@ import Loading from "../components/Loading/Loading";
 import { useQuery } from "@tanstack/react-query";
 import CategoriesCard from "../components/CategoriesCard";
 import NewsSection from "../components/NewsSection/NewsSection";
-import { MagnifyingGlassIcon } from "react-native-heroicons/outline";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { useNavigation } from "@react-navigation/native";
 import axios from 'axios';
 import { useInfiniteQuery } from '@tanstack/react-query';

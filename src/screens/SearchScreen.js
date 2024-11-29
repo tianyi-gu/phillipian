@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import React, { useCallback, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { XMarkIcon } from "react-native-heroicons/outline";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import { fetchSearchNews } from "../../utils/NewsApi";
 import { debounce } from "lodash";
 import NewsSection from "../components/NewsSection/NewsSection";

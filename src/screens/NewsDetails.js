@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, TouchableOpacity, Dimensions, ScrollView } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { ChevronLeftIcon, ShareIcon } from "react-native-heroicons/outline";
-import { BookmarkSquareIcon } from "react-native-heroicons/solid";
+import { ChevronLeftIcon, ShareIcon, BookmarkSquareIcon } from "@heroicons/react/24/outline";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WebView } from "react-native-webview";
 import { useColorScheme } from "nativewind";
@@ -106,7 +105,7 @@ export default function NewsDetails() {
 
       {visible && (
         <ActivityIndicator
-          size="large"
+          size={50}
           color="white"
           style={{
             position: "absolute",
