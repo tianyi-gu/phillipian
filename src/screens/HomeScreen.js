@@ -70,7 +70,7 @@ export default function HomeScreen() {
       <StatusBar style={colorScheme == "dark" ? "light" : "dark"} />
       <FlatList
         ListHeaderComponent={
-          <>
+          <View>
             <Header />
             {isBreakingLoading ? (
               <Loading />
@@ -78,13 +78,13 @@ export default function HomeScreen() {
               <View>
                 <MiniHeader label="This Month's Top Stories" />
                 <BreakingNews 
-                  label="Breaking News" 
+                  label="Breaking News"
                   data={Array.isArray(breakingNews) ? breakingNews : []}
                 />
               </View>
             )}
             <MiniHeader label="Recommended" />
-          </>
+          </View>
         }
         data={getNewsItems()}
         renderItem={({ item }) => <NewsSection newsProps={[item]} />}
@@ -94,6 +94,10 @@ export default function HomeScreen() {
         onEndReached={loadMoreNews}
         onEndReachedThreshold={0.1}
         ListFooterComponent={isFetchingNextPage ? <Loading /> : null}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={5}
+        windowSize={10}
+        initialNumToRender={5}
       />
     </SafeAreaView>
   );

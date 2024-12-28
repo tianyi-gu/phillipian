@@ -19,60 +19,57 @@ const android = Platform.OS === "android";
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
+const TabNavigator = () => {
+  const { colorScheme } = useColorScheme();
+  
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarIcon: ({ focused }) => {
+          let iconName;
+
+          if (route.name === "Home") {
+            iconName = "home";
+          } else if (route.name === "Discover") {
+            iconName = "compass-outline";
+          } else if (route.name === "Saved") {
+            iconName = "bookmark-outline";
+          } else if (route.name === "Search") {
+            iconName = "search-outline";
+          }
+
+          const customizeSize = 25;
+
+          return (
+            <Ionicons
+              name={iconName}
+              size={customizeSize}
+              color={focused ? "white" : "gray"}
+            />
+          );
+        },
+
+        tabBarActiveTintColor: "white",
+        tabBarInactiveTintColor: "gray",
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontFamily: "SpaceGroteskMedium",
+        },
+        tabBarStyle: {
+          backgroundColor: colorScheme == "dark" ? "black" : "white",
+        },
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Discover" component={DiscoverScreen} />
+      <Tab.Screen name="Saved" component={SavedScreen} />
+      <Tab.Screen name="Search" component={SearchScreen} />
+    </Tab.Navigator>
+  );
+};
+
 export default function AppNavigation() {
-  const { colorScheme, toggleColorScheme } = useColorScheme();
-  const TabNavigator = () => {
-    return (
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarIcon: ({ focused }) => {
-            let iconName;
-
-            if (route.name === "Home") {
-              iconName = "home";
-            } else if (route.name === "Discover") {
-              iconName = "compass-outline";
-            } else if (route.name === "Saved") {
-              iconName = "bookmark-outline";
-            } else if (route.name === "Search") {
-              iconName = "search-outline";
-            }
-
-            const customizeSize = 25;
-
-            return (
-              <Ionicons
-                name={iconName}
-                size={customizeSize}
-                color={focused ? "white" : "gray"}
-              />
-            );
-          },
-
-          tabBarActiveTintColor: "white",
-          tabBarInactiveTintColor: "gray",
-          tabBarLabelStyle: {
-            fontSize: 12,
-            fontFamily: "SpaceGroteskMedium",
-            // paddingBottom: 10,
-          },
-          tabBarStyle: {
-            backgroundColor: colorScheme == "dark" ? "black" : "white",
-            // borderTopWidth: 0,
-            // padding: 10,
-            // height: 60,
-          },
-        })}
-      >
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Discover" component={DiscoverScreen} />
-        <Tab.Screen name="Saved" component={SavedScreen} />
-        <Tab.Screen name="Search" component={SearchScreen} />
-      </Tab.Navigator>
-    );
-  };
-
   return (
     <NavigationContainer>
       <Stack.Navigator

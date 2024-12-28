@@ -3,12 +3,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
+  FlatList,
 } from "react-native";
 import React, { useCallback, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { XMarkIcon } from "react-native-heroicons/outline";
-import { fetchSearchNews } from "../../utils/NewsApi";
+import { searchWordPressNews } from "../../utils/NewsApi";
 import { debounce } from "lodash";
 import NewsSection from "../components/NewsSection/NewsSection";
 import { heightPercentageToDP as hp } from "react-native-responsive-screen";
@@ -27,12 +27,12 @@ export default function SearchScreen() {
       setSearchTerm(search);
 
       try {
-        const data = await fetchSearchNews(search);
+        const data = await searchWordPressNews(search);
 
         setLoading(false);
 
-        if (data && data.articles) {
-          setResults(data.articles);
+        if (data && Array.isArray(data)) {
+          setResults(data);
         }
       } catch (error) {
         console.error("Error fetching news:", error);
@@ -55,29 +55,33 @@ export default function SearchScreen() {
           className=" font-medium text-black tracking-wider p-3 py-1 w-[90%] "
         />
         <TouchableOpacity onPress={() => navigation.navigate("Home")}>
-          <XMarkIcon size="25" color="white" strokeWidth={3} />
+          <XMarkIcon size="25" color="gray" strokeWidth={3} />
         </TouchableOpacity>
       </View>
 
       {/* Search Results */}
-      <View className="mx-4 mb-4 ">
-        <Text
-          className="text-xl dark:text-white"
-          style={{
-            fontFamily: "SpaceGroteskBold",
-          }}
-        >
-          {results?.length} News for {searchTerm}
-        </Text>
-      </View>
+      {loading ? (
+        <View className="mx-4">
+          <Text className="text-gray-500">Searching...</Text>
+        </View>
+      ) : (
+        <View className="flex-1">
+          <View className="mx-4 mb-4">
+            <Text
+              className="text-xl dark:text-white"
+              style={{
+                fontFamily: "SpaceGroteskBold",
+              }}
+            >
+              {results?.length} Results for "{searchTerm}"
+            </Text>
+          </View>
 
-      <ScrollView
-        contentContainerStyle={{
-          paddingBottom: hp(5),
-        }}
-      >
-        <NewsSection newsProps={results} label="Search Results" />
-      </ScrollView>
+          <View className="flex-1">
+            <NewsSection newsProps={results} label="Search Results" />
+          </View>
+        </View>
+      )}
     </View>
   );
 }

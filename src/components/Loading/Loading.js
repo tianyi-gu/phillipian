@@ -1,10 +1,20 @@
 import { View, ActivityIndicator } from "react-native";
-import React from "react";
+import React, { memo } from "react";
+import { useColorScheme } from "nativewind";
 
-export default function Loading() {
+const Loading = memo(({ size = "large", style }) => {
+  const { colorScheme } = useColorScheme();
+
   return (
-    <View className="flex-1 justify-center items-center">
-      <ActivityIndicator size="large" color="white" />
+    <View className="flex-1 justify-center items-center" style={style}>
+      <ActivityIndicator 
+        size={size} 
+        color={colorScheme === "dark" ? "white" : "black"}
+      />
     </View>
   );
-}
+});
+
+Loading.displayName = 'Loading';
+
+export default Loading;

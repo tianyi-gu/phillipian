@@ -1,14 +1,20 @@
-import { View, Text, Image, ImageBackground, Dimensions } from "react-native";
-import React, { useEffect } from "react";
+import { View, Image, Dimensions } from "react-native";
+import React, { useEffect, useCallback } from "react";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useFonts } from "expo-font";
-import { useCallback } from "react";
 import * as SplashScreen from "expo-splash-screen";
 import { useNavigation } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
+// import { LinearGradient } from "expo-linear-gradient"; // Uncomment if needed
+
+const SPLASH_DURATION = 3000; // 3 seconds
+const ANIMATION_DELAY = 200;
+const ANIMATION_DURATION = 700;
+const ANIMATION_DAMPING = 12;
 
 export default function SplashScreens() {
   const navigation = useNavigation();
+  const { width, height } = Dimensions.get('window');
+  const logoSize = Math.min(width, height) * 0.8;
 
   const [fontsLoaded, fontError] = useFonts({
     SpaceGroteskSemiBold: require("../fonts/SpaceGrotesk-SemiBold.ttf"),
@@ -16,39 +22,41 @@ export default function SplashScreens() {
     SpaceGroteskMedium: require("../fonts/SpaceGrotesk-Medium.ttf"),
   });
 
+  const handleNavigation = useCallback(() => {
+    navigation.navigate("HomeTabs");
+  }, [navigation]);
+
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded || fontError) {
-      await SplashScreen.hideAsync();
+      try {
+        await SplashScreen.hideAsync();
+        setTimeout(handleNavigation, SPLASH_DURATION);
+      } catch (error) {
+        console.error("Error in splash screen:", error);
+        handleNavigation(); // Navigate anyway if there's an error
+      }
     }
-
-    setTimeout(() => {
-      navigation.navigate("HomeTabs")
-      // unnecessary welcome page which can be readded if wanted
-      // navigation.navigate("Welcome");
-    }, 3000); // 3 seconds delay
-  });
+  }, [fontsLoaded, fontError, handleNavigation]);
 
   useEffect(() => {
     onLayoutRootView();
-  }, [fontsLoaded, fontError]);
+  }, [onLayoutRootView]);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded && !fontError) {
     return null;
   }
 
-  const { width, height } = Dimensions.get('window');
-  const logoSize = Math.min(width, height) * 0.8;
-
   return (
-    <View style = {{
-      flex: 1, 
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "black",
-    }}
+    <View 
+      style={{
+        flex: 1, 
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "black",
+      }}
     >
-      {/* this is for a gradient background, uncomment if want color */}
-      {/* <LinearGradient
+      {/* Gradient background - uncomment if needed
+      <LinearGradient
         colors={["rgba(0, 85, 0, 0.95)", "rgba(0, 85, 0, 0.95)"]}
         style={{
           position: "absolute",
@@ -62,20 +70,24 @@ export default function SplashScreens() {
         end={{ x: 0.5, y: 1 }}
       /> */}
 
-      <View
+      <Animated.View
         onLayout={onLayoutRootView}
-        className=" "
-        entering={FadeInDown.delay(200).duration(700).springify().damping(12)}
+        entering={FadeInDown
+          .delay(ANIMATION_DELAY)
+          .duration(ANIMATION_DURATION)
+          .springify()
+          .damping(ANIMATION_DAMPING)
+        }
       >
         <Image
-          source={require("../..//assets/images/plipwhite.png")}
+          source={require("../../assets/images/plipwhite.png")}
           style={{
             width: logoSize,
             height: logoSize,
             resizeMode: "contain",
           }}
         />
-      </View>
+      </Animated.View>
     </View>
   );
 }

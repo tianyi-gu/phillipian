@@ -1,59 +1,64 @@
-import React from "react";
+import React, { useMemo, useCallback } from "react";
 import { View, Text, TouchableWithoutFeedback, Image, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from "react-native-responsive-screen";
-
-// Import the cover image
 import coverImage from '../../../assets/images/plippaper.png';
 
-var { width, height } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
+
+const CARD_WIDTH = width * 0.8;
+const CARD_HEIGHT = height * 0.22;
+const DATE_OPTIONS = { year: 'numeric', month: 'short', day: 'numeric' };
 
 export default function BreakingNewsCard({ item, handleClick }) {
-  // Function to safely get text content
-  const getTextContent = (content) => {
+  const getTextContent = useCallback((content) => {
     if (typeof content === 'string') return content;
-    if (content && typeof content === 'object' && content.rendered) return content.rendered;
+    if (content?.rendered) return content.rendered;
     return '';
-  };
+  }, []);
 
-  // Function to format the date
-  const formatDate = (isoDate) => {
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(isoDate).toLocaleDateString(undefined, options);
-  };
-
-  // Function to get author name
-  const getAuthorName = () => {
-    if (item.yoast_head_json && item.yoast_head_json.author) {
-      return item.yoast_head_json.author;
+  const formatDate = useCallback((isoDate) => {
+    try {
+      return new Date(isoDate).toLocaleDateString(undefined, DATE_OPTIONS);
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid Date';
     }
-    return "Unknown Author";
-  };
+  }, []);
 
-  // Function to get the image source
-  const getImageSource = () => {
-    // console.log('Item:', JSON.stringify(item, null, 2));
-    
-    if (item.jetpack_featured_media_url) {
-      // console.log('Using jetpack_featured_media_url:', item.jetpack_featured_media_url);
+  const authorName = useMemo(() => {
+    return item?.yoast_head_json?.author || "Unknown Author";
+  }, [item?.yoast_head_json?.author]);
+
+  const imageSource = useMemo(() => {
+    if (item?.jetpack_featured_media_url) {
       return { uri: item.jetpack_featured_media_url };
     }
     
-    if (item.yoast_head_json && item.yoast_head_json.og_image && item.yoast_head_json.og_image[0] && item.yoast_head_json.og_image[0].url) {
-      // console.log('Using og_image:', item.yoast_head_json.og_image[0].url);
+    if (item?.yoast_head_json?.og_image?.[0]?.url) {
       return { uri: item.yoast_head_json.og_image[0].url };
     }
     
-    // console.log('No image found, using cover image');
     return coverImage;
-  };
+  }, [item]);
 
-  const imageSource = getImageSource();
-  // console.log('Final image source:', imageSource);
+  const title = useMemo(() => getTextContent(item?.title), [item?.title, getTextContent]);
+  const date = useMemo(() => formatDate(item?.date), [item?.date, formatDate]);
+
+  const onPress = useCallback(() => {
+    handleClick(item);
+  }, [handleClick, item]);
 
   return (
-    <TouchableWithoutFeedback onPress={() => handleClick(item)}>
-      <View className="relative" style={{ width: width * 0.8, height: height * 0.22, overflow: 'hidden', borderRadius: 24 }}>
+    <TouchableWithoutFeedback onPress={onPress}>
+      <View 
+        className="relative" 
+        style={{ 
+          width: CARD_WIDTH, 
+          height: CARD_HEIGHT, 
+          overflow: 'hidden', 
+          borderRadius: 24 
+        }}
+      >
         <Image
           source={imageSource}
           style={{
@@ -79,16 +84,19 @@ export default function BreakingNewsCard({ item, handleClick }) {
 
         <View className="absolute bottom-4 left-4 right-4 justify-end">
           <View className="space-y-2">
-            <Text className="text-white text-base font-semibold" numberOfLines={2}>
-              {getTextContent(item.title)}
+            <Text 
+              className="text-white text-base font-semibold" 
+              numberOfLines={2}
+            >
+              {title}
             </Text>
 
             <View className="flex-row justify-between items-center">
               <Text className="text-neutral-300 text-xs">
-                {getAuthorName()}
+                {authorName}
               </Text>
               <Text className="text-neutral-300 text-xs">
-                {formatDate(item.date)}
+                {date}
               </Text>
             </View>
           </View>
