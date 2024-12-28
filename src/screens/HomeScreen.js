@@ -24,8 +24,18 @@ export default function HomeScreen() {
   const { data: breakingNews, isLoading: isBreakingLoading } = useQuery({
     queryKey: ["breakingNews"],
     queryFn: fetchWordPressBreakingNews,
-    // onSuccess: (data) => console.log("Breaking News data:", data),
-    // onError: (error) => console.error("Breaking News error:", error),
+    onSuccess: (data) => console.log("Breaking News data received:", data?.length, "items"),
+    onError: (error) => console.error("Breaking News error:", error),
+    initialData: [],
+    select: (data) => Array.isArray(data) ? data : [],
+  });
+
+  // Uncomment these console logs for debugging
+  console.log('Breaking News State:', {
+    isLoading: isBreakingLoading,
+    data: breakingNews,
+    dataType: typeof breakingNews,
+    isArray: Array.isArray(breakingNews)
   });
 
   // Recommended News
@@ -67,7 +77,10 @@ export default function HomeScreen() {
             ) : (
               <View>
                 <MiniHeader label="This Month's Top Stories" />
-                <BreakingNews label="Breaking News" data={breakingNews} />
+                <BreakingNews 
+                  label="Breaking News" 
+                  data={Array.isArray(breakingNews) ? breakingNews : []}
+                />
               </View>
             )}
             <MiniHeader label="Recommended" />

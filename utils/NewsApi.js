@@ -27,9 +27,21 @@ const wordpressApiCall = async (endpoints, params) => {
 
 export const fetchWordPressBreakingNews = async () => {
   console.log("Fetching breaking news...");
-  const result = await wordpressApiCall(postsUrl, { per_page: 5 });
-  console.log("Breaking news fetched:", result.length, "items");
-  return result;
+  try {
+    const result = await wordpressApiCall(postsUrl, { per_page: 5 });
+    console.log("Breaking news fetched:", result?.length, "items");
+    
+    // Ensure we always return an array
+    if (!Array.isArray(result)) {
+      console.log("Breaking news result is not an array:", result);
+      return [];
+    }
+    
+    return result;
+  } catch (error) {
+    console.error("Error fetching breaking news:", error);
+    return [];
+  }
 };
 
 export const fetchWordPressRecommendedNews = async () => {

@@ -1,31 +1,51 @@
 import React from "react";
-import { View, Dimensions } from "react-native";
+import { View, Dimensions, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Carousel from "react-native-snap-carousel";
 import BreakingNewsCard from "./BreakingNewsCard";
 
-var { width } = Dimensions.get("window");
+const SLIDER_WIDTH = Dimensions.get('window').width;
+const ITEM_WIDTH = SLIDER_WIDTH * 0.8;
 
 export default function BreakingNews({ data, label }) {
   const navigation = useNavigation();
-
-  const handleClick = (item) => {
-    navigation.navigate("NewsDetails", item);
+  
+  // Ensure data is an array and has items
+  const carouselData = Array.isArray(data) ? data : [];
+  
+  const renderItem = ({ item }) => {
+    if (!item) return null;
+    return (
+      <View style={{ width: ITEM_WIDTH }}>
+        <BreakingNewsCard 
+          item={item} 
+          handleClick={() => navigation.navigate("NewsDetails", item)} 
+        />
+      </View>
+    );
   };
 
+  if (carouselData.length === 0) {
+    return null;
+  }
+
   return (
-    <View>
+    <View style={{ flex: 1 }}>
       <Carousel
-        data={data}
-        renderItem={({ item }) => (
-          <BreakingNewsCard item={item} handleClick={handleClick} />
-        )}
-        firstItem={1}
+        layout={'default'}
+        data={carouselData}
+        renderItem={renderItem}
+        sliderWidth={SLIDER_WIDTH}
+        itemWidth={ITEM_WIDTH}
+        useScrollView={true}
         inactiveSlideScale={0.86}
         inactiveSlideOpacity={0.6}
-        sliderWidth={width}
-        itemWidth={width * 0.8}
-        slideStyle={{ display: "flex", alignItems: "center" }}
+        firstItem={0}
+        loop={false}
+        autoplay={false}
+        enableMomentum={true}
+        lockScrollWhileSnapping={false}
+        removeClippedSubviews={false}
       />
     </View>
   );
