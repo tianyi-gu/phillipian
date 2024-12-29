@@ -25,23 +25,13 @@ export default function HomeScreen() {
   // Breaking News Query
   const { 
     data: breakingNews, 
-    isLoading: isBreakingLoading,
-    error: breakingError
+    isLoading: isBreakingLoading 
   } = useQuery({
     queryKey: ["breakingNews"],
     queryFn: fetchWordPressBreakingNews,
-    onSuccess: (data) => console.log("Breaking News fetched successfully:", data?.length, "items"),
-    onError: (error) => console.error("Breaking News error:", error),
-    staleTime: 60000, // Consider data fresh for 1 minute
-    cacheTime: 3600000, // Keep in cache for 1 hour
-    retry: 2 // Retry failed requests twice
-  });
-
-  console.log("Breaking News Query State:", {
-    isLoading: isBreakingLoading,
-    hasError: Boolean(breakingError),
-    dataLength: breakingNews?.length,
-    error: breakingError?.message
+    staleTime: 60000,
+    cacheTime: 3600000,
+    retry: 2
   });
 
   // Recommended News Query
@@ -50,8 +40,7 @@ export default function HomeScreen() {
     isLoading: isRecommendedLoading 
   } = useQuery({
     queryKey: ["recommendedNews", page],
-    queryFn: () => fetchWordPressRecommendedNews(page),
-    onSuccess: (data) => console.log("Recommended News fetched successfully:", data?.length, "items")
+    queryFn: () => fetchWordPressRecommendedNews(page)
   });
 
   return (
