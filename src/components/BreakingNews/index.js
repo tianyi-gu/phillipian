@@ -27,6 +27,13 @@ const carouselConfig = {
 export default function BreakingNews({ data, label }) {
   const navigation = useNavigation();
   
+  // Add debug logging
+  console.log("BreakingNews received data:", {
+    hasData: Boolean(data?.length),
+    dataLength: data?.length,
+    firstItem: data?.[0]
+  });
+  
   const carouselData = useMemo(() => {
     return Array.isArray(data) ? data : [];
   }, [data]);
@@ -36,7 +43,16 @@ export default function BreakingNews({ data, label }) {
   }, [navigation]);
 
   const renderItem = useCallback(({ item }) => {
-    if (!item) return null;
+    if (!item) {
+      console.log("Null item in carousel");
+      return null;
+    }
+    
+    console.log("Rendering carousel item:", {
+      id: item.id,
+      hasTitle: Boolean(item.title),
+      hasImage: Boolean(item.urlToImage)
+    });
     
     return (
       <View style={{ width: ITEM_WIDTH }}>
@@ -49,6 +65,7 @@ export default function BreakingNews({ data, label }) {
   }, [handleNewsPress]);
 
   if (carouselData.length === 0) {
+    console.log("No data for carousel");
     return null;
   }
 

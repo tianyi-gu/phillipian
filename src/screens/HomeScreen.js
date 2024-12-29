@@ -1,69 +1,58 @@
-import { fetchWordPressBreakingNews, fetchWordPressRecommendedNews } from "../../utils/NewsApi";
-import { View, FlatList } from "react-native";
 import React, { useState, useEffect } from "react";
+import { View, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "nativewind";
 import { StatusBar } from "expo-status-bar";
+import { useQuery } from "@tanstack/react-query";
+import { fetchWordPressBreakingNews, fetchWordPressRecommendedNews } from "../../utils/NewsApi";
 import Loading from "../components/Loading/Loading";
 import Header from "../components/Header/Header";
 import NewsSection from "../components/NewsSection/NewsSection";
-import { useQuery } from "@tanstack/react-query";
 import MiniHeader from "../components/Header/MiniHeader";
 import { heightPercentageToDP as hp } from "react-native-responsive-screen";
 import BreakingNews from "../components/BreakingNews";
 
 export default function HomeScreen() {
   const { colorScheme, toggleColorScheme } = useColorScheme();
+  const [page, setPage] = useState(1);
+
   useEffect(() => {
     if (colorScheme !== "dark") {
       toggleColorScheme("dark");
     }
   }, []);
 
-  // Breaking News
-  const { data: breakingNews, isLoading: isBreakingLoading } = useQuery({
+  // Breaking News Query
+  const { 
+    data: breakingNews, 
+    isLoading: isBreakingLoading,
+    error: breakingError
+  } = useQuery({
     queryKey: ["breakingNews"],
     queryFn: fetchWordPressBreakingNews,
-    onSuccess: (data) => console.log("Breaking News data received:", data?.length, "items"),
+    onSuccess: (data) => console.log("Breaking News fetched successfully:", data?.length, "items"),
     onError: (error) => console.error("Breaking News error:", error),
-    initialData: [],
-    select: (data) => Array.isArray(data) ? data : [],
+    staleTime: 60000, // Consider data fresh for 1 minute
+    cacheTime: 3600000, // Keep in cache for 1 hour
+    retry: 2 // Retry failed requests twice
   });
 
-  // Uncomment these console logs for debugging
-  console.log('Breaking News State:', {
+  console.log("Breaking News Query State:", {
     isLoading: isBreakingLoading,
-    data: breakingNews,
-    dataType: typeof breakingNews,
-    isArray: Array.isArray(breakingNews)
+    hasError: Boolean(breakingError),
+    dataLength: breakingNews?.length,
+    error: breakingError?.message
   });
 
-  // Recommended News
+  // Recommended News Query
   const { 
     data: recommendedNews, 
-    isLoading: isRecommendedLoading, 
-    fetchNextPage, 
-    hasNextPage, 
-    isFetchingNextPage 
+    isLoading: isRecommendedLoading 
   } = useQuery({
     queryKey: ["recommendedNews", page],
     queryFn: () => fetchWordPressRecommendedNews(page),
-    getNextPageParam: (lastPage, pages) => lastPage.length === 10 ? pages.length + 1 : undefined,
+    onSuccess: (data) => console.log("Recommended News fetched successfully:", data?.length, "items")
   });
-
-  const [page, setPage] = useState(1);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-  const loadMoreNews = () => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  };
-
-  const getNewsItems = () => {
-    if (!recommendedNews) return [];
-    return recommendedNews.pages ? recommendedNews.pages.flat() : recommendedNews;
-  };
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">
@@ -74,26 +63,22 @@ export default function HomeScreen() {
             <Header />
             {isBreakingLoading ? (
               <Loading />
-            ) : (
-              <View>
+            ) : breakingNews?.length > 0 ? (
+              <>
                 <MiniHeader label="This Month's Top Stories" />
-                <BreakingNews 
-                  label="Breaking News"
-                  data={Array.isArray(breakingNews) ? breakingNews : []}
-                />
-              </View>
-            )}
-            <MiniHeader label="Recommended" />
+                <BreakingNews data={breakingNews} />
+                <MiniHeader label="Recommended" />
+              </>
+            ) : null}
           </View>
         }
-        data={getNewsItems()}
+        data={recommendedNews || []}
         renderItem={({ item }) => <NewsSection newsProps={[item]} />}
-        keyExtractor={(item, index) => item.id.toString() + index}
+        keyExtractor={(item) => item.id.toString()}
         ListEmptyComponent={isRecommendedLoading ? <Loading /> : null}
         contentContainerStyle={{ paddingBottom: hp(80) }}
-        onEndReached={loadMoreNews}
+        onEndReached={() => setPage(prev => prev + 1)}
         onEndReachedThreshold={0.1}
-        ListFooterComponent={isFetchingNextPage ? <Loading /> : null}
         removeClippedSubviews={true}
         maxToRenderPerBatch={5}
         windowSize={10}
