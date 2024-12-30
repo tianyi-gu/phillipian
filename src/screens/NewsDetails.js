@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, ActivityIndicator, TouchableOpacity, Dimensions } from "react-native";
+import { View, Text, ActivityIndicator, TouchableOpacity, Dimensions, Share } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { ChevronLeftIcon, ShareIcon } from "react-native-heroicons/outline";
 import { BookmarkSquareIcon } from "react-native-heroicons/solid";
@@ -55,13 +55,45 @@ export default function NewsDetails() {
     }
   }, [item]);
 
+  const handleShare = async () => {
+    try {
+      const shareContent = {
+        message: item.title.rendered || item.title,
+        url: item.link,
+        title: item.title.rendered || item.title
+      };
+      
+      await Share.share(shareContent, {
+        dialogTitle: 'Share Article'
+      });
+    } catch (error) {
+      console.error("Error sharing:", error);
+    }
+  };
+
   useEffect(() => {
     loadSavedArticles();
   }, [loadSavedArticles]);
 
+  useEffect(() => {
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.setOptions({
+        headerShown: false
+      });
+    }
+    return () => {
+      if (parent) {
+        parent.setOptions({
+          headerShown: true
+        });
+      }
+    };
+  }, [navigation]);
+
   return (
-    <View className="flex-1 bg-white dark:bg-neutral-900">
-      <View className="w-full flex-row justify-between items-center px-4 pt-10 pb-4 bg-white dark:bg-neutral-800">
+    <View className="flex-1 bg-white dark:bg-neutral-900" style={{ backgroundColor: colorScheme === 'dark' ? '#171717' : '#ffffff' }}>
+      <View className="w-full flex-row justify-between items-center px-4 pt-10 pb-4 bg-white dark:bg-neutral-800" style={{ backgroundColor: colorScheme === 'dark' ? '#262626' : '#ffffff' }}>
         <TouchableOpacity 
           onPress={() => navigation.goBack()} 
           className="bg-gray-100 dark:bg-neutral-700 p-2 rounded-full"
@@ -74,7 +106,10 @@ export default function NewsDetails() {
         </TouchableOpacity>
 
         <View className="flex-row space-x-3">
-          <TouchableOpacity className="bg-gray-100 dark:bg-neutral-700 p-2 rounded-full">
+          <TouchableOpacity 
+            className="bg-gray-100 dark:bg-neutral-700 p-2 rounded-full"
+            onPress={handleShare}
+          >
             <ShareIcon 
               size={25} 
               color={colorScheme === "dark" ? "white" : "gray"} 

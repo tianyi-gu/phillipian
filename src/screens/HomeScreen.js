@@ -15,17 +15,38 @@ import axios from "axios";
 
 export default function HomeScreen() {
   const { colorScheme, toggleColorScheme } = useColorScheme();
+
+  // Initialize dark mode
+  useEffect(() => {
+    const initDarkMode = async () => {
+      try {
+        if (colorScheme !== "dark") {
+          await toggleColorScheme();
+        }
+      } catch (error) {
+        console.error('Error setting dark mode:', error);
+      }
+    };
+
+    initDarkMode();
+  }, []);
   
-  // Breaking News Query
+  // Define included categories once to use in both queries
+  const includedCategories = [2, 3, 8, 5, 4, 106]; // News, Commentary, Editorial, Arts, Sports, Multilingual
+  const categoriesParam = includedCategories.join(',');
+
   const { 
     data: breakingNews, 
     isLoading: isBreakingLoading 
   } = useQuery({
     queryKey: ["breakingNews"],
-    queryFn: fetchWordPressBreakingNews
+    queryFn: async () => {
+      const url = `https://phillipian.net/wp-json/wp/v2/posts?per_page=10&categories=${categoriesParam}`;
+      const response = await axios.get(url);
+      return response.data;
+    }
   });
 
-  // Recommended News Query - matching DiscoverScreen pattern
   const { 
     data,
     fetchNextPage,
@@ -35,8 +56,7 @@ export default function HomeScreen() {
   } = useInfiniteQuery({
     queryKey: ["recommendedNews"],
     queryFn: async ({ pageParam = 1 }) => {
-      console.log('Fetching page:', pageParam);
-      const url = `https://phillipian.net/wp-json/wp/v2/posts?per_page=10&page=${pageParam}`;
+      const url = `https://phillipian.net/wp-json/wp/v2/posts?per_page=10&page=${pageParam}&categories=${categoriesParam}`;
       const response = await axios.get(url);
       return response.data;
     },
@@ -46,10 +66,9 @@ export default function HomeScreen() {
   });
 
   const recommendedNews = data ? data.pages.flat() : [];
-  console.log('Total recommended news:', recommendedNews.length);
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colorScheme === 'dark' ? '#171717' : '#ffffff' }}>
       <StatusBar style={colorScheme == "dark" ? "light" : "dark"} />
       <FlatList
         ListHeaderComponent={
@@ -70,14 +89,13 @@ export default function HomeScreen() {
         renderItem={({ item }) => <NewsSection newsProps={[item]} />}
         keyExtractor={(item) => item.id.toString()}
         ListEmptyComponent={isRecommendedLoading ? <Loading /> : null}
-        contentContainerStyle={{ paddingBottom: hp(80) }}
+        contentContainerStyle={{ paddingBottom: hp(5) }}
         onEndReached={() => {
           if (hasNextPage && !isFetchingNextPage) {
-            console.log('End reached, fetching next page');
             fetchNextPage();
           }
         }}
-        onEndReachedThreshold={0.1}
+        onEndReachedThreshold={0.5}
         removeClippedSubviews={true}
         maxToRenderPerBatch={5}
         windowSize={10}
