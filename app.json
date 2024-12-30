@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "phillipian",
-    "slug": "phillipian",
+    "name": "The Phillipian",
+    "slug": "phillipian-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/p_1024x1024.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
@@ -15,16 +15,24 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "net.thephillipian.mobile",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/images/p_1024x1024.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "net.phillipian.mobile"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/images/p_32x32.png"
     },
     "plugins": [
       "expo-font"

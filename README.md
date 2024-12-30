@@ -16,6 +16,23 @@ install dev dependencies
 
 ### `npm install`
 
+### For iOS Development
+
+1. Install Cocoapods if you haven't already:
+   ```bash
+   sudo gem install cocoapods
+   ```
+
+2. Generate native iOS project files:
+   ```bash
+   npx expo prebuild
+   ```
+
+3. Open the iOS project in Xcode:
+   ```bash
+   open ios/*.xcworkspace
+   ```
+
 Run The app
 
 ### `npm start`

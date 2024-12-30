@@ -62,35 +62,36 @@ const transformPost = (post) => {
 
 export const fetchWordPressBreakingNews = async () => {
   try {
-    const result = await wordpressApiCall(POSTS_URL, { 
-      per_page: PER_PAGE,
-      orderby: 'date',
-      order: 'desc'
-    });
-
-    if (!Array.isArray(result)) {
-      return [];
-    }
-
-    return result.map(transformPost);
+    const url = 'https://phillipian.net/wp-json/wp/v2/posts?per_page=10';
+    const response = await axios.get(url);
+    // Return the data directly, just like in DiscoverScreen
+    return response.data;
   } catch (error) {
     console.error("Error fetching breaking news:", error);
     return [];
   }
 };
 
-export const fetchWordPressRecommendedNews = async () => {
+export const fetchWordPressRecommendedNews = async (page = 1) => {
   try {
-    const result = await wordpressApiCall(POSTS_URL, { 
-      per_page: PER_PAGE,
-      offset: PER_PAGE,
-      orderby: 'date',
-      order: 'desc'
-    });
-    
-    return Array.isArray(result) ? result.map(transformPost) : [];
+    const url = `https://phillipian.net/wp-json/wp/v2/posts?per_page=10&page=${page}`;
+    const response = await axios.get(url);
+    // Return the data directly, just like in DiscoverScreen
+    return response.data;
   } catch (error) {
     console.error("Error fetching recommended news:", error);
+    return [];
+  }
+};
+
+export const searchWordPressNews = async (searchTerm) => {
+  try {
+    const url = `https://phillipian.net/wp-json/wp/v2/posts?search=${encodeURIComponent(searchTerm)}`;
+    const response = await axios.get(url);
+    // Return the data directly, just like in DiscoverScreen and other functions
+    return response.data;
+  } catch (error) {
+    console.error("Error searching news:", error);
     return [];
   }
 };
