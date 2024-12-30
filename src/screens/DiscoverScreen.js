@@ -26,7 +26,6 @@ export default function DiscoverScreen() {
   const navigation = useNavigation();
 
   const fetchWordPressCategoryNews = useCallback(async ({ pageParam = 1 }) => {
-    console.log('Fetching news for category:', activeCategory.title, 'page:', pageParam);
     const url = `https://phillipian.net/wp-json/wp/v2/posts?categories=${activeCategory.id}&per_page=10&page=${pageParam}`;
     const response = await axios.get(url);
     return response.data;
