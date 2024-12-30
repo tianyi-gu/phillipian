@@ -74,12 +74,21 @@ export const fetchWordPressBreakingNews = async () => {
 
 export const fetchWordPressRecommendedNews = async (page = 1) => {
   try {
+    console.log('Fetching recommended news for page:', page);
     const url = `https://phillipian.net/wp-json/wp/v2/posts?per_page=10&page=${page}`;
+    console.log('Fetching from URL:', url);
+    
     const response = await axios.get(url);
-    // Return the data directly, just like in DiscoverScreen
+    console.log('Received data length:', response.data?.length);
+    
     return response.data;
   } catch (error) {
     console.error("Error fetching recommended news:", error);
+    console.error("Error details:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data
+    });
     return [];
   }
 };
