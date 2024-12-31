@@ -16,6 +16,8 @@
     ],
     "ios": {
       "supportsTablet": true,
+      "requireFullScreen": true,
+      "userInterfaceStyle": "automatic",
       "bundleIdentifier": "net.thephillipian.mobile",
       "buildNumber": "1",
       "infoPlist": {

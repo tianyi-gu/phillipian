@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { Platform, Dimensions, TouchableOpacity } from "react-native";
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -15,6 +15,7 @@ import SearchScreen from "../screens/SearchScreen";
 import { useColorScheme } from "nativewind";
 
 const android = Platform.OS === "android";
+const { width: screenWidth } = Dimensions.get('window');
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -45,12 +46,12 @@ const TabNavigator = () => {
             <Ionicons
               name={iconName}
               size={customizeSize}
-              color={focused ? "white" : "gray"}
+              color={focused ? (colorScheme === "dark" ? "white" : "black") : "gray"}
             />
           );
         },
 
-        tabBarActiveTintColor: "white",
+        tabBarActiveTintColor: colorScheme === "dark" ? "white" : "black",
         tabBarInactiveTintColor: "gray",
         tabBarLabelStyle: {
           fontSize: 12,
@@ -58,6 +59,26 @@ const TabNavigator = () => {
         },
         tabBarStyle: {
           backgroundColor: colorScheme == "dark" ? "black" : "white",
+          width: Platform.isPad ? Math.min(768, screenWidth) : '100%',
+          alignSelf: 'center',
+          borderTopWidth: 1,
+          borderTopColor: colorScheme === "dark" ? "#333" : "#eee",
+        },
+        tabBarButton: (props) => {
+          const { onPress, ...otherProps } = props;
+          return (
+            <TouchableOpacity
+              {...otherProps}
+              onPress={onPress}
+              activeOpacity={0.7}
+              style={{
+                flex: 1,
+                paddingVertical: Platform.isPad ? 15 : 8,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            />
+          );
         },
       })}
     >

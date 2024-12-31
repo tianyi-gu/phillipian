@@ -15,6 +15,4 @@ const Loading = memo(({ size = "large", style }) => {
   );
 });
 
-Loading.displayName = 'Loading';
-
 export default Loading;
