@@ -1,122 +1,116 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator, TouchableOpacity, Dimensions, ScrollView } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { ChevronLeftIcon, ShareIcon, BookmarkSquareIcon } from "react-native-heroicons/outline";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { WebView } from "react-native-webview";
-import { useColorScheme } from "nativewind";
-import { SummaryButton } from '../components/AI/SummaryButton';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { summarizer } from '../components/AI/Summarizer';
 
-const { height, width } = Dimensions.get("window");
+export default function NewsDetails({ route }) {
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const { article } = route.params;
 
-export default function NewsDetails() {
-  const { params: item } = useRoute();
-  const [visible, setVisible] = useState(false);
-  const navigation = useNavigation();
-  const [isBookmarked, toggleBookmark] = useState(false);
-  const { colorScheme } = useColorScheme();
-  const [articleContent, setArticleContent] = useState('');
-
-  const INJECTED_JAVASCRIPT = `
-    window.ReactNativeWebView.postMessage(document.body.innerText);
-    true;
-  `;
-
-  const onMessage = (event) => {
-    setArticleContent(event.nativeEvent.data);
-  };
-
-  const toggleBookmarkAndSave = async () => {
+  const generateSummary = async () => {
+    setLoading(true);
     try {
-      const savedArticles = await AsyncStorage.getItem("savedArticles");
-      let savedArticlesArray = savedArticles ? JSON.parse(savedArticles) : [];
-
-      const isArticleBookmarked = savedArticlesArray.some(
-        (savedArticle) => savedArticle.url === item.url
-      );
-
-      if (!isArticleBookmarked) {
-        savedArticlesArray.push(item);
-        await AsyncStorage.setItem(
-          "savedArticles",
-          JSON.stringify(savedArticlesArray)
-        );
-        toggleBookmark(true);
-      } else {
-        const updatedSavedArticlesArray = savedArticlesArray.filter(
-          (savedArticle) => savedArticle.url !== item.url
-        );
-        await AsyncStorage.setItem(
-          "savedArticles",
-          JSON.stringify(updatedSavedArticlesArray)
-        );
-        toggleBookmark(false);
-      }
+      const result = await summarizer.summarize(article.content);
+      setSummary(result);
     } catch (error) {
-      console.log("Error Saving Article", error);
+      console.error('Summary generation failed:', error);
+      // TODO: Add error handling UI
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    const loadSavedArticles = async () => {
-      try {
-        const savedArticles = await AsyncStorage.getItem("savedArticles");
-        const savedArticlesArray = savedArticles
-          ? JSON.parse(savedArticles)
-          : [];
-
-        const isArticleBookmarked = savedArticlesArray.some(
-          (savedArticle) => savedArticle.url === item.url
-        );
-
-        toggleBookmark(isArticleBookmarked);
-      } catch (error) {
-        console.log("Error Loading Saved Articles", error);
-      }
-    };
-
-    loadSavedArticles();
-  }, [item.link]);
-
   return (
-    <View className="flex-1 bg-white dark:bg-neutral-900">
-      <View className="w-full flex-row justify-between items-center px-4 pt-10 pb-4 bg-white dark:bg-neutral-800">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="bg-gray-100 dark:bg-neutral-700 p-2 rounded-full">
-          <ChevronLeftIcon size={25} strokeWidth={3} color={colorScheme === "dark" ? "white" : "gray"} />
-        </TouchableOpacity>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>{article.title}</Text>
+      <Text style={styles.date}>{article.publishDate}</Text>
+      <Text style={styles.author}>By {article.author}</Text>
+      
+      <TouchableOpacity 
+        style={[
+          styles.summaryButton,
+          loading && styles.summaryButtonDisabled
+        ]}
+        onPress={generateSummary}
+        disabled={loading}
+      >
+        <Text style={styles.summaryButtonText}>
+          {loading ? "Generating Summary..." : "Generate Summary"}
+        </Text>
+        {loading && <ActivityIndicator color="#fff" style={styles.loader} />}
+      </TouchableOpacity>
 
-        <View className="flex-row space-x-3">
-          <TouchableOpacity className="bg-gray-100 dark:bg-neutral-700 p-2 rounded-full">
-            <ShareIcon size={25} color={colorScheme === "dark" ? "white" : "gray"} strokeWidth={2} />
-          </TouchableOpacity>
-          <TouchableOpacity className="bg-gray-100 dark:bg-neutral-700 p-2 rounded-full" onPress={toggleBookmarkAndSave}>
-            <BookmarkSquareIcon size={25} color={isBookmarked ? "green" : (colorScheme === "dark" ? "white" : "gray")} strokeWidth={2} />
-          </TouchableOpacity>
+      {summary && (
+        <View style={styles.summaryContainer}>
+          <Text style={styles.summaryTitle}>Summary</Text>
+          <Text style={styles.summaryText}>{summary}</Text>
         </View>
-      </View>
-
-      <WebView
-        source={{ uri: item.link }}
-        onLoadStart={() => setVisible(true)}
-        onLoadEnd={() => setVisible(false)}
-        style={{ flex: 1 }}
-        injectedJavaScript={INJECTED_JAVASCRIPT}
-        onMessage={onMessage}
-      />
-
-      {visible && (
-        <ActivityIndicator
-          size={50}
-          color="white"
-          style={{
-            position: "absolute",
-            top: height / 2,
-            left: width / 2,
-          }}
-        />
       )}
 
-      <SummaryButton articleContent={articleContent} />
-    </View>
+      <Text style={styles.content}>{article.content}</Text>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  date: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  author: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+  },
+  content: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginTop: 16,
+  },
+  summaryButton: {
+    backgroundColor: '#007AFF',
+    padding: 12,
+    borderRadius: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  summaryButtonDisabled: {
+    backgroundColor: '#999',
+  },
+  summaryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  loader: {
+    marginLeft: 8,
+  },
+  summaryContainer: {
+    backgroundColor: '#f0f0f0',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  summaryText: {
+    fontSize: 16,
+    lineHeight: 24,
+  },
+});

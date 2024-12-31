@@ -1,0 +1,36 @@
+TITLE: Campus-Wide Power Outage Plunges Andover into Darkness
+AUTHOR: Staff Report 
+DATE: 2024-12-13
+---
+Sharp thuds, slamming doors, the buzz of emergency lights flickering on. A power outage engulfed campus in darkness at about 11 p.m. on December 8, turning off electricity to around 80 percent of buildings on campus, according to Fernando Alonso, Assistant Head for Operations and Finance, Chief Financial Officer. About 90 minutes after the outage, the Office of Physical Plant was able to restore power to most areas on campus.
+
+Following an electrical interruption in the town of Andover, the Power Loss Controller (PLC) system on campus activated Andover’s emergency campus generator. However, the PLC sensed an overload and deactivated the generator, leaving most buildings on campus without power, described Alonso. 
+
+“The generator performed as it was intended. The PLC has an internal protection which also worked and prevented potential catastrophic damage to the equipment and electrical infrastructure of the campus,” wrote Alonso in an email to The Phillipian.
+
+Although some dorm rooms had emergency lights, others were completely dark, leaving many students confused by the sudden blackout. Edward Cha ’27 recounted how, in Stimson House, most people streamed out into the hallways and gathered in the darkened common room. 
+
+“About [a third] or half of the dorm was in the common room and we were talking about playing cards [and] going out, but then [Xin Yi Chan, Stimson House Counselor] also came out into the common room.… She stopped everyone from doing that stuff and then she told everyone to go to sleep. People weren’t going to sleep because everyone was excited [at the idea of] no school,” said Cha.
+
+After it became clear that the outage would not be resolved immediately, students reacted in a plethora of ways. Rosie Juma ’26 described the varied reactions she witnessed in Pease House.
+
+“One room immediately got ready for bed, turned out the lights, [and] went straight to sleep. They were going to use that as their excuse not to do homework… The room next to ours, they stayed up talking and screaming every time the power went back [and] every time it went out. They were very active. I had a friend that decided to hibernate in the common room because there was some type of light coming in and they also had to close one of their doors because of the beeping sound… My roommate and I tried to get work done [and] realized half of our devices were dead… I just decided to go to sleep [but] I kid you not, once I pulled the blankets over myself, the power came back. I was like, let me just unplug everything and go to sleep,” said Juma.
+
+Though the power outage did not last long, students trying to do homework were affected due to the temporary lack of Wi-Fi late. Leo Zaidi ’25 explained how the blackout made it difficult for some students to prepare for classes the next day. 
+
+“Some kids in my dorm were really upset about the fact that the Wi-Fi went out because they just could not do their homework. I think that’s a major issue, especially for teachers not doing anything about it the next day and just assuming, ‘My students will all have their homework done.’ I know the teachers said [they’re] probably going to give a little bit more leeway, and I’m sure some teachers did, but it would have been nice to not have classes that day,” said Zaidi.
+
+About 90 minutes after the blackout happened, Alonso sent an email to the student body detailing why the incident occurred. He explained how the Office of Physical Plant (OPP) quickly took action to repair the generator.
+
+“The Academy’s power plant is staffed 24/7 so when the problem started, the team immediately started working on identifying the cause and bringing outside support to solve the issue. We took a systematic approach, prioritizing safety along the way,” wrote Alonso in an email to The Phillipian.
+
+Students had mixed opinions on OPP’s response to the situation. Though some thought the outage should have been resolved sooner or should not have even occurred given Andover’s resources, others appreciated OPP’s timeliness, as the blackout happened in the middle of the night. While Elise Zhang ’26 appreciated Alonso’s clarifying email, she believed that an earlier update would have been helpful as well.
+
+“This may not be possible, because I know [OPP] would likely allocate their efforts towards dealing with the event, but I think having a notification earlier about what’s going on so that there’s less panic and more clarity as to what our steps are moving forward would be nice. Maybe an email saying that the entire town of Andover is experiencing this loss, not to panic, [and] we have backup generators that we will get working,” said Zhang.
+
+Since the blackout, no further complications with the generators have occurred. Alonso noted the rarity of this occurrence and also thanked the OPP team for working to address the blackout.
+
+  “The OPP team takes extraordinary care and pride in the work they do to maintain the campus and all its operations. The Academy has annual service contracts with vendors to help ensure safe and reliable power to campus, however, with any mechanical systems there is always a chance something can go wrong or break during a time of need. OPP typically does testing and maintenance when the students are on break to reduce the impact to the community… In my 20 years at the Academy, we have not had a power outage like this one, so it is a rare occurrence,” wrote Alonso.
+
+Alonso continued, “We apologize for the duration of the event. It is important to mention that throughout this power outage, the power plant staff was able to manually continue to provide steam heat and hot water to the community. I would also like to thank the entire OPP team [led] by director of facilities Joe LoBuono and in particular a special thanks to Rusty Langlois our Chief Engineer who was immediately at the power plant and spent countless hours coordinating a solution to the problem.”
+

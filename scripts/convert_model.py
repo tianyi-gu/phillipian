@@ -64,6 +64,7 @@ def generate_summary(model, tokenizer, article):
 
 def convert_model():
     try:
+        conversion_start_time = time.time()
         print("Starting model conversion process...")
         
         # Set up directories
@@ -79,36 +80,42 @@ def convert_model():
                 print(f"Created directory: {dir_path}")
 
         # Load model and tokenizer
-        model_name = "facebook/bart-large-cnn"
+        model_name = "sshleifer/distilbart-cnn-12-6"  # Changed to smaller model
         print(f"Loading model and tokenizer from {model_name}...")
         
+        model_load_start = time.time()
         print("Loading tokenizer...")
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         print("Tokenizer loaded successfully")
         
         print("Loading model (this might take a few minutes)...")
         model = TFAutoModelForSeq2SeqLM.from_pretrained(model_name, from_pt=True)
-        print("Model loaded successfully")
+        model_load_time = time.time() - model_load_start
+        print(f"Model loaded successfully in {model_load_time:.2f} seconds")
 
-        # Test the original model with an actual article
-        print("\nTesting original model with actual article...")
-        
-        # Read an article from archive_texts
-        article = read_article("phillipian_20200417_covid.txt")
-        print("\nOriginal Article Preview (first 500 chars):")
-        print(article[:500], "...\n")
-        
-        # Generate summary with timing
-        summary, timing = generate_summary(model, tokenizer, article)
-        
-        print("\nGenerated Summary:")
-        print(summary)
-        print("\nTiming Information:")
-        print(f"Tokenization time: {timing['tokenization']:.3f} seconds")
-        print(f"Generation time: {timing['generation']:.3f} seconds")
-        print(f"Decoding time: {timing['decoding']:.3f} seconds")
-        print(f"Total time: {timing['total']:.3f} seconds")
-        print("\nOriginal model test successful")
+        # Test multiple articles to compare quality
+        test_articles = [
+            "phillipian_20200417_covid.txt",
+            "phillipian_20241213_poweroutage.txt"  # Adding a second article for comparison
+        ]
+
+        for article_file in test_articles:
+            print(f"\nTesting with article: {article_file}")
+            article = read_article(article_file)
+            print("\nOriginal Article Preview (first 500 chars):")
+            print(article[:500], "...\n")
+            
+            # Generate summary with timing
+            summary, timing = generate_summary(model, tokenizer, article)
+            
+            print("\nGenerated Summary:")
+            print(summary)
+            print("\nTiming Information:")
+            print(f"Tokenization time: {timing['tokenization']:.3f} seconds")
+            print(f"Generation time: {timing['generation']:.3f} seconds")
+            print(f"Decoding time: {timing['decoding']:.3f} seconds")
+            print(f"Total inference time: {timing['total']:.3f} seconds")
+            print("-" * 80)
 
         # Define serving function
         @tf.function(input_signature=[{
@@ -121,39 +128,57 @@ def convert_model():
 
         # Save as SavedModel format
         print("\nSaving as SavedModel format...")
+        savedmodel_start = time.time()
         tf.saved_model.save(
             model,
             temp_dir,
             signatures={"serving_default": serving_fn}
         )
-        print("SavedModel saved successfully")
+        savedmodel_time = time.time() - savedmodel_start
+        print(f"SavedModel saved successfully in {savedmodel_time:.2f} seconds")
 
         # Convert to TensorFlow.js format
         print("Converting model to TensorFlow.js format...")
+        tfjs_start = time.time()
         tfjs.converters.convert_tf_saved_model(
             temp_dir,
             base_dir,
             skip_op_check=True,
             strip_debug_ops=True
         )
-        print(f"Model converted and saved to {base_dir}")
+        tfjs_time = time.time() - tfjs_start
+        print(f"Model converted to TF.js in {tfjs_time:.2f} seconds")
+
+        # Calculate final model size
+        model_size = sum(os.path.getsize(os.path.join(base_dir, f)) 
+                        for f in os.listdir(base_dir) 
+                        if os.path.isfile(os.path.join(base_dir, f)))
+        print(f"\nFinal model size: {model_size / (1024*1024):.2f} MB")
 
         # Save tokenizer and configuration
         print("Saving tokenizer and configuration...")
+        tokenizer_start = time.time()
         tokenizer.save_pretrained(base_dir)
         
         model_config = model.config.to_dict()
         config_path = os.path.join(base_dir, "config.json")
         with open(config_path, "w") as f:
             json.dump(model_config, f)
-        print("Configuration saved successfully")
+        tokenizer_time = time.time() - tokenizer_start
+        print(f"Configuration saved in {tokenizer_time:.2f} seconds")
 
         # Clean up temporary directory
         print("Cleaning up temporary files...")
         shutil.rmtree(temp_dir)
         print("Cleanup completed")
 
-        print("\nConversion completed successfully!")
+        total_conversion_time = time.time() - conversion_start_time
+        print(f"\nTotal conversion process took {total_conversion_time:.2f} seconds")
+        print("\nBreakdown:")
+        print(f"- Model loading: {model_load_time:.2f}s")
+        print(f"- SavedModel creation: {savedmodel_time:.2f}s")
+        print(f"- TF.js conversion: {tfjs_time:.2f}s")
+        print(f"- Tokenizer/config saving: {tokenizer_time:.2f}s")
 
     except Exception as e:
         print(f"Error during conversion: {str(e)}")
