@@ -59,8 +59,6 @@ const TabNavigator = () => {
         },
         tabBarStyle: {
           backgroundColor: colorScheme == "dark" ? "black" : "white",
-          width: Platform.isPad ? Math.min(768, screenWidth) : '100%',
-          alignSelf: 'center',
           borderTopWidth: 1,
           borderTopColor: colorScheme === "dark" ? "#333" : "#eee",
         },
@@ -73,7 +71,7 @@ const TabNavigator = () => {
               activeOpacity={0.7}
               style={{
                 flex: 1,
-                paddingVertical: Platform.isPad ? 15 : 8,
+                paddingVertical: 8,
                 justifyContent: 'center',
                 alignItems: 'center',
               }}

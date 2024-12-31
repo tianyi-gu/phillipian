@@ -4,7 +4,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "nativewind";
 import { StatusBar } from "expo-status-bar";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { fetchWordPressBreakingNews, fetchWordPressRecommendedNews } from "../../utils/NewsApi";
 import Loading from "../components/Loading/Loading";
 import Header from "../components/Header/Header";
 import NewsSection from "../components/NewsSection/NewsSection";
@@ -69,17 +68,6 @@ export default function HomeScreen() {
 
   const recommendedNews = data ? data.pages.flat() : [];
 
-  const renderNewsItem = ({ item }) => (
-    <TouchableOpacity 
-      activeOpacity={0.7}
-      onPress={() => {
-        // Your existing navigation or press handling
-      }}
-    >
-      <NewsSection newsProps={[item]} />
-    </TouchableOpacity>
-  );
-
   return (
     <SafeAreaView 
       style={{ 
@@ -90,9 +78,8 @@ export default function HomeScreen() {
       <View 
         style={{ 
           flex: 1,
-          width: Platform.isPad ? Math.min(768, screenWidth) : '100%',
-          alignSelf: 'center',
-          overflow: 'visible'
+          width: '100%',
+          alignSelf: 'center'
         }}
       >
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
@@ -103,14 +90,8 @@ export default function HomeScreen() {
           }}
           contentContainerStyle={{
             paddingBottom: hp(5),
-            width: '100%',
-            minHeight: Platform.isPad ? '100%' : undefined
+            width: '100%'
           }}
-          scrollEnabled={true}
-          showsVerticalScrollIndicator={true}
-          bounces={true}
-          alwaysBounceVertical={true}
-          keyboardShouldPersistTaps="handled"
           ListHeaderComponent={
             <View style={{ width: '100%' }}>
               <Header />
@@ -126,7 +107,17 @@ export default function HomeScreen() {
             </View>
           }
           data={recommendedNews}
-          renderItem={renderNewsItem}
+          renderItem={({ item }) => (
+            <TouchableOpacity 
+              activeOpacity={0.7}
+              onPress={() => {
+                // Your existing navigation or press handling
+              }}
+              style={{ width: '100%' }}
+            >
+              <NewsSection newsProps={[item]} />
+            </TouchableOpacity>
+          )}
           keyExtractor={(item) => item.id.toString()}
           ListEmptyComponent={isRecommendedLoading ? <Loading /> : null}
           onEndReached={() => {
@@ -136,16 +127,10 @@ export default function HomeScreen() {
           }}
           onEndReachedThreshold={0.5}
           removeClippedSubviews={false}
-          maxToRenderPerBatch={Platform.isPad ? 10 : 5}
-          windowSize={Platform.isPad ? 15 : 10}
-          initialNumToRender={Platform.isPad ? 10 : 5}
+          maxToRenderPerBatch={5}
+          windowSize={10}
+          initialNumToRender={5}
           scrollEventThrottle={16}
-          decelerationRate="normal"
-          directionalLockEnabled={true}
-          maintainVisibleContentPosition={{
-            minIndexForVisible: 0,
-            autoscrollToTopThreshold: 10,
-          }}
         />
       </View>
     </SafeAreaView>

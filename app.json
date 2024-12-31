@@ -15,7 +15,7 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "requireFullScreen": true,
       "userInterfaceStyle": "automatic",
       "bundleIdentifier": "net.thephillipian.mobile",
