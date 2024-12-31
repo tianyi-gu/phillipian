@@ -54,3 +54,19 @@ DerivedData
 *.ipa
 *.xcuserstate
 ios/.xcode.env.local
+
+# Generated model files
+assets/model/
+
+# iOS
+ios/Podfile.lock
+ios/Podfile.properties.json
+ios/ThePhillipian/Supporting/
+
+# Android
+android/
+
+# Python environment
+env/
+__pycache__/
+*.pyc
