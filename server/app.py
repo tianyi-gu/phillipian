@@ -5,7 +5,6 @@ from scripts.summarizer import Summarizer
 from haystack.document_stores import InMemoryDocumentStore
 from haystack.nodes import BM25Retriever, TransformersReader
 from haystack.pipelines import ExtractiveQAPipeline
-from transformers import DistilBertTokenizer, DistilBertForQuestionAnswering
 import os
 import logging
 from typing import Optional, Dict
@@ -34,15 +33,27 @@ class QueryRequest(BaseModel):
 
 # Initialize components
 summarizer = Summarizer()
-model_name = "distilbert-base-uncased-distilled-squad"
-document_store = InMemoryDocumentStore(use_bm25=True)
+model_name = "deepset/deberta-v3-base-squad2"
+
+# Configure document store with better similarity settings
+document_store = InMemoryDocumentStore(
+    use_bm25=True,
+    bm25_parameters={
+        "b": 0.75,
+        "k1": 1.2,
+    }
+)
+
+# Configure retriever
 retriever = BM25Retriever(
     document_store=document_store,
-    top_k=3
+    top_k=5,
+    scale_score=True
 )
+
 reader = TransformersReader(
     model_name_or_path=model_name,
-    context_window_size=500
+    top_k=3
 )
 
 def init_document_store():
@@ -69,11 +80,17 @@ def init_document_store():
                         logger.warning(f"Empty file: {filename}")
                         continue
                     
+                    # Extract date from filename (assuming format includes year)
+                    date = filename.split('_')[1] if '_' in filename else None
+                    
+                    # Add more metadata to help with retrieval
                     documents.append({
                         "content": content,
                         "meta": {
                             "name": filename,
-                            "date": filename.split('_')[1] if '_' in filename else None
+                            "date": date,
+                            "year": date[:4] if date else None,  # Extract year if date exists
+                            "keywords": filename.lower()  # Add filename as searchable keywords
                         }
                     })
                     logger.warning(f"Loaded: {filename}")
@@ -112,50 +129,63 @@ async def query_archives(request: QueryRequest):
         if not request.question:
             raise HTTPException(status_code=400, detail="No question provided")
         
-        # Log the incoming question
-        logger.warning(f"Received question: {request.question}")
-        
-        result = pipeline.run(
-            query=request.question,
-            params={
-                "Retriever": {"top_k": 3},
-                "Reader": {"top_k": 1}
-            }
+        # Get relevant documents
+        retriever_result = retriever.retrieve(
+            query=request.question
         )
         
-        # Log the pipeline result
-        logger.warning(f"Pipeline result: {result}")
-        
-        if result["answers"]:
-            answer = result["answers"][0]
+        # Process only the highest-scored document from retriever
+        if retriever_result:
+            best_doc = retriever_result[0]
             
-            # Find the sentence containing the answer in the context
-            context_sentences = answer.context.split('.')
-            answer_sentence = next((s for s in context_sentences if answer.answer in s), '')
-            if answer_sentence:
-                # Get surrounding sentences for more context
-                answer_idx = context_sentences.index(answer_sentence)
-                start_idx = max(0, answer_idx - 1)
-                end_idx = min(len(context_sentences), answer_idx + 2)
-                answer.answer = '. '.join(context_sentences[start_idx:end_idx]).strip() + '.'
+            # Get answers from the best document
+            result = reader.predict(
+                query=request.question,
+                documents=[best_doc]
+            )
             
-            response_data = {
-                'answer': answer.answer,
-                'context': answer.context,
-                'score': float(answer.score),
-                'source': answer.meta.get('name', 'Unknown')
-            }
-            # Log the response we're sending back
-            logger.warning(f"Sending response: {response_data}")
-            return response_data
-        else:
-            logger.warning("No answer found")
-            return {
-                'answer': 'No answer found',
-                'context': '',
-                'score': 0,
-                'source': None
-            }
+            if result['answers']:
+                best_answer = result['answers'][0]
+                
+                # Get surrounding context
+                paragraphs = [p.strip() for p in best_doc.content.split('\n') if p.strip()]
+                context_paragraph = next(
+                    (p for p in paragraphs if best_answer.answer in p), 
+                    ''
+                )
+                
+                if context_paragraph:
+                    # Split into sentences and find the one containing the answer
+                    sentences = [s.strip() + '.' for s in context_paragraph.split('.') if s.strip()]
+                    relevant_sentences = []
+                    
+                    # Find the answer sentence and include one sentence before and after for context
+                    for i, sentence in enumerate(sentences):
+                        if best_answer.answer in sentence:
+                            if i > 0:
+                                relevant_sentences.append(sentences[i-1])
+                            relevant_sentences.append(sentence)
+                            if i < len(sentences) - 1:
+                                relevant_sentences.append(sentences[i+1])
+                            break
+                    
+                    answer_text = ' '.join(relevant_sentences)
+                else:
+                    answer_text = best_answer.answer
+                
+                return {
+                    'answer': answer_text.strip(),
+                    'context': best_doc.content,
+                    'score': float(best_doc.score),
+                    'source': best_doc.meta.get('name', 'Unknown')
+                }
+                
+        return {
+            'answer': 'No answer found',
+            'context': '',
+            'score': 0,
+            'source': None
+        }
             
     except Exception as e:
         logger.error(f"Error in query_archives: {str(e)}")
