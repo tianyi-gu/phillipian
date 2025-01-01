@@ -8,6 +8,7 @@ from haystack.pipelines import ExtractiveQAPipeline
 import os
 import logging
 from typing import Optional, Dict
+import whisper
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -31,9 +32,18 @@ class SummarizeRequest(BaseModel):
 class QueryRequest(BaseModel):
     question: str
 
+class TranslateRequest(BaseModel):
+    text: str
+    target_language: str
+
 # Initialize components
 summarizer = Summarizer()
 model_name = "deepset/deberta-v3-base-squad2"
+
+# Initialize Whisper model
+logger.warning("Loading Whisper model...")
+whisper_model = whisper.load_model("base")
+logger.warning("Whisper model loaded successfully")
 
 # Configure document store with better similarity settings
 document_store = InMemoryDocumentStore(
@@ -57,6 +67,17 @@ reader = TransformersReader(
 )
 
 def init_document_store():
+    if document_store.get_document_count() > 0:
+        logger.warning("Document store already initialized")
+        return
+    
+    try:
+        load_documents()
+        logger.warning(f"Document store initialized with {document_store.get_document_count()} documents")
+    except Exception as e:
+        logger.error(f"Error initializing document store: {str(e)}")
+
+def load_documents():
     archive_folder = "../archive_texts"
     
     if not os.path.exists(archive_folder):
@@ -68,8 +89,6 @@ def init_document_store():
         logger.error(f"No .txt files found in '{archive_folder}'")
         return
     
-    logger.warning(f"Found files: {text_files}")
-    
     if not document_store.get_document_count():
         documents = []
         for filename in text_files:
@@ -77,50 +96,36 @@ def init_document_store():
                 with open(os.path.join(archive_folder, filename), "r", encoding="utf-8") as file:
                     content = file.read()
                     if not content.strip():
-                        logger.warning(f"Empty file: {filename}")
                         continue
                     
-                    # Extract date from filename (assuming format includes year)
                     date = filename.split('_')[1] if '_' in filename else None
                     
-                    # Add more metadata to help with retrieval
                     documents.append({
                         "content": content,
                         "meta": {
                             "name": filename,
                             "date": date,
-                            "year": date[:4] if date else None,  # Extract year if date exists
-                            "keywords": filename.lower()  # Add filename as searchable keywords
+                            "year": date[:4] if date else None,
+                            "keywords": filename.lower()
                         }
                     })
-                    logger.warning(f"Loaded: {filename}")
                     
             except Exception as e:
                 logger.error(f"Error processing {filename}: {str(e)}")
         
         if documents:
             document_store.write_documents(documents)
-            logger.warning(f"Total documents loaded: {len(documents)}")
 
-@app.on_event("startup")
-async def initialize():
-    init_document_store()
-    global pipeline
-    pipeline = ExtractiveQAPipeline(reader=reader, retriever=retriever)
+# Initialize at startup
+init_document_store()
 
-@app.post("/api/summarize", response_model=Dict[str, str])
-async def summarize_article(request: SummarizeRequest):
+@app.post("/api/summarize")
+async def summarize(request: SummarizeRequest):
     try:
-        if not request.content:
-            raise HTTPException(status_code=400, detail="No content provided")
-            
         summary = summarizer.summarize(request.content)
-        return {
-            'summary': summary,
-            'original_text': request.content
-        }
+        return {"summary": summary, "original_text": request.content}
     except Exception as e:
-        logger.error(f"Error in summarize_article: {str(e)}")
+        logger.error(f"Error in summarize: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/query")
@@ -147,7 +152,7 @@ async def query_archives(request: QueryRequest):
             if result['answers']:
                 best_answer = result['answers'][0]
                 
-                # Get surrounding context
+                # Find the paragraph containing the answer
                 paragraphs = [p.strip() for p in best_doc.content.split('\n') if p.strip()]
                 context_paragraph = next(
                     (p for p in paragraphs if best_answer.answer in p), 
@@ -189,6 +194,24 @@ async def query_archives(request: QueryRequest):
             
     except Exception as e:
         logger.error(f"Error in query_archives: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/translate")
+async def translate_text(request: TranslateRequest):
+    try:
+        logger.warning(f"Translating to {request.target_language}")
+        result = whisper_model.translate(
+            request.text,
+            task="translate",
+            language=request.target_language
+        )
+        
+        return {
+            "translated_text": result,
+            "source_language": "auto-detected"
+        }
+    except Exception as e:
+        logger.error(f"Translation error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

@@ -21,3 +21,11 @@ POST http://localhost:5001/api/summarize
 
 
 python3 -m uvicorn server.app:app --host 0.0.0.0 --port 5001 --reload
+
+
+
+# to prepare whisper ai model
+brew install ffmpeg
+# under virtual environment
+pip install openai-whisper
+pip install torch torchvision torchaudio

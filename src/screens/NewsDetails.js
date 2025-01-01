@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { View, Text, ActivityIndicator, TouchableOpacity, Dimensions, Share, ScrollView } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { ChevronLeftIcon, ShareIcon, XMarkIcon } from "react-native-heroicons/outline";
+import { ChevronLeftIcon, ShareIcon, XMarkIcon, LanguageIcon } from "react-native-heroicons/outline";
 import { BookmarkSquareIcon } from "react-native-heroicons/solid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WebView } from "react-native-webview";
 import { useColorScheme } from "nativewind";
 import { API_URL } from '../config/api';
+import { Ionicons } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
+import { Picker } from '@react-native-picker/picker';
 
 const { height, width } = Dimensions.get("window");
 const STORAGE_KEY = "savedArticles";
@@ -111,6 +114,22 @@ export default function NewsDetails() {
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setError] = useState(null);
+  const [targetLanguage, setTargetLanguage] = useState('en');
+  const [translatedContent, setTranslatedContent] = useState(null);
+  const [translating, setTranslating] = useState(false);
+
+  const languages = {
+    'en': 'English',
+    'es': 'Spanish',
+    'fr': 'French',
+    'zh': 'Chinese',
+    'ja': 'Japanese',
+    'ko': 'Korean',
+    'de': 'German',
+    'ru': 'Russian',
+    'ar': 'Arabic',
+    'hi': 'Hindi'
+  };
 
   const generateSummary = async () => {
     setSummaryLoading(true);
@@ -205,6 +224,36 @@ export default function NewsDetails() {
       console.error("Error Saving Article:", error);
     }
   }, [item]);
+
+  const handleTranslate = async (lang) => {
+    if (lang === 'en') {
+      setTranslatedContent(null);
+      return;
+    }
+
+    setTranslating(true);
+    try {
+      const response = await fetch(`${API_URL}/api/translate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: summary,
+          target_language: lang
+        }),
+      });
+
+      const data = await response.json();
+      if (data.translated_text) {
+        setTranslatedContent(data.translated_text);
+      }
+    } catch (error) {
+      console.error('Translation error:', error);
+    } finally {
+      setTranslating(false);
+    }
+  };
 
   useEffect(() => {
     loadSavedArticles();
@@ -320,24 +369,66 @@ export default function NewsDetails() {
             >
               Summary
             </Text>
-            <TouchableOpacity 
-              onPress={() => setSummary(null)}
-              className="p-2 rounded-full bg-gray-100 dark:bg-neutral-700"
-            >
-              <XMarkIcon size={20} color={colorScheme === "dark" ? "white" : "gray"} />
-            </TouchableOpacity>
+            <View className="flex-row space-x-3 items-center">
+              <View className="bg-gray-100 dark:bg-neutral-700 rounded-lg px-2">
+                <Picker
+                  selectedValue={targetLanguage}
+                  onValueChange={(value) => {
+                    setTargetLanguage(value);
+                    handleTranslate(value);
+                  }}
+                  style={{ 
+                    width: 120,
+                    color: colorScheme === 'dark' ? '#ffffff' : '#000000'
+                  }}
+                  dropdownIconColor={colorScheme === 'dark' ? '#ffffff' : '#000000'}
+                >
+                  {Object.entries(languages).map(([code, name]) => (
+                    <Picker.Item 
+                      key={code} 
+                      label={name} 
+                      value={code}
+                      color={colorScheme === 'dark' ? '#ffffff' : '#000000'}
+                    />
+                  ))}
+                </Picker>
+              </View>
+              <TouchableOpacity 
+                onPress={handleSpeak}
+                className="p-2 rounded-full bg-gray-100 dark:bg-neutral-700"
+              >
+                <Ionicons 
+                  name={isPlaying ? "pause-circle" : "play-circle"} 
+                  size={25}
+                  color={colorScheme === "dark" ? "white" : "gray"}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => setSummary(null)}
+                className="p-2 rounded-full bg-gray-100 dark:bg-neutral-700"
+              >
+                <XMarkIcon size={20} color={colorScheme === "dark" ? "white" : "gray"} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <ScrollView 
             className="p-4"
             style={{ maxHeight: height * 0.6 }} // Allow content to scroll if too long
           >
-            <Text 
-              className="text-base text-gray-700 dark:text-gray-300"
-              style={{ color: colorScheme === 'dark' ? '#d1d1d1' : '#4a4a4a' }}
-            >
-              {summary}
-            </Text>
+            {translating ? (
+              <ActivityIndicator 
+                size="large" 
+                color={colorScheme === "dark" ? "white" : "gray"}
+              />
+            ) : (
+              <Text 
+                className="text-base text-gray-700 dark:text-gray-300"
+                style={{ color: colorScheme === 'dark' ? '#d1d1d1' : '#4a4a4a' }}
+              >
+                {translatedContent || summary}
+              </Text>
+            )}
           </ScrollView>
         </View>
       ) : (
