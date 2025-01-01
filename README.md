@@ -8,11 +8,11 @@ developed and maintained by Tianyi Gu, Managing Editor, CXLVII
 Access _The Phillipian's_ online website [here](https://phillipian.net)!
 
 
-# Runnning Locally
+# Running Locally
 
 ## Get Started
 
-install dev dependencies
+Install dev dependencies:
 
 ### `npm install`
 
@@ -33,7 +33,7 @@ install dev dependencies
    open ios/*.xcworkspace
    ```
 
-Run The app
+## Run The App
 
 ### `npm start`
 
@@ -41,6 +41,39 @@ Runs your app in development mode.
 
 Install the [Expo app](https://expo.io) on your phone and scan the generated QR code.
 
-#### `npm run ios/npm run android`
+### `npm run ios/npm run android`
 
 Opens app on iOS or Android Simulator (installation needed)
+
+## Features
+
+### Article Summarization
+The app now includes an AI-powered article summarization feature:
+- Click the "Generate Summary" button at the bottom of any article
+- View a concise summary in a modal panel
+- Close the summary with the X button to return to the article
+
+### Backend Setup
+The summarization feature requires a Flask backend server:
+1. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Run the Flask server:
+   ```bash
+   python server/app.py
+   ```
+
+The server runs on port 5001 and provides the `/api/summarize` endpoint for article summarization.
+
+### Configuration
+- Update `src/config/api.ts` with your local server IP address
+- Default port is 5001
+- Make sure your device and server are on the same network
+
+## Development Notes
+- The app uses React Native with Expo
+- Backend uses Flask with CORS enabled
+- Article summaries are generated in real-time
+- Dark mode support throughout the app
