@@ -1,37 +1,60 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from scripts.summarizer import Summarizer
 import logging
+from typing import Optional, Dict
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Initialize the summarizer
+app = FastAPI()
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Pydantic models
+class SummarizeRequest(BaseModel):
+    title: Optional[str] = None
+    content: str
+
+# Initialize summarizer
 summarizer = Summarizer()
 
-@app.route('/api/summarize', methods=['POST'])
-def summarize_article():
+@app.post("/api/summarize", response_model=Dict[str, str])
+async def summarize_article(request: SummarizeRequest):
     try:
-        data = request.json
-        
-        # Get article content from request
-        title = data.get('title', '')
-        content = data.get('content', '')
-        
-        if not content:
-            return jsonify({'error': 'No content provided'}), 400
+        if not request.content:
+            raise HTTPException(status_code=400, detail="No content provided")
             
-        # Generate summary from content
-        summary = summarizer.summarize(content)
-        
-        return jsonify({
+        summary = summarizer.summarize(request.content)
+        return {
             'summary': summary,
-            'original_text': content
-        })
+            'original_text': request.content
+        }
         
     except Exception as e:
-        logging.error(f"Error in summarize_article: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Error in summarize_article: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+# Commented out RAG features for later implementation
+"""
+@app.post("/api/query")
+async def query_archives():
+    pass
+
+@app.get("/api/articles")
+async def get_articles():
+    pass
+"""
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=5001, reload=True)

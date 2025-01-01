@@ -125,7 +125,7 @@ export default function NewsDetails() {
         date: item.date || ''
       };
       
-      console.log('Sending article data:', articleData);
+      // console.log('Sending article data:', articleData);
       
       const response = await fetch(`${API_URL}/api/summarize`, {
         method: 'POST',
@@ -135,9 +135,9 @@ export default function NewsDetails() {
         body: JSON.stringify(articleData),
       });
 
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
+      // console.log('Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to generate summary');
