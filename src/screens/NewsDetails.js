@@ -7,6 +7,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WebView } from "react-native-webview";
 import { useColorScheme } from "nativewind";
 import { API_URL } from '../config/api';
+import { Ionicons } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
 
 const { height, width } = Dimensions.get("window");
 const STORAGE_KEY = "savedArticles";
@@ -111,6 +113,9 @@ export default function NewsDetails() {
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setError] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [voices, setVoices] = useState([]);
+  const [selectedVoice, setSelectedVoice] = useState(null);
 
   const generateSummary = async () => {
     setSummaryLoading(true);
@@ -206,8 +211,50 @@ export default function NewsDetails() {
     }
   }, [item]);
 
+  const loadVoices = async () => {
+    try {
+      const availableVoices = await Speech.getAvailableVoicesAsync();
+      // Filter for better quality voices (usually en-US or en-GB)
+      const bestVoices = availableVoices.filter(voice => 
+        (voice.identifier.includes('en-US') || voice.identifier.includes('en-GB')) &&
+        voice.quality === Speech.VoiceQuality.Enhanced
+      );
+      setVoices(bestVoices);
+      if (bestVoices.length > 0) {
+        setSelectedVoice(bestVoices[0]);
+      }
+    } catch (error) {
+      console.error('Error loading voices:', error);
+    }
+  };
+
+  const handleSpeak = async () => {
+    if (isPlaying) {
+      await Speech.stop();
+      setIsPlaying(false);
+    } else {
+      setIsPlaying(true);
+      try {
+        await Speech.speak(summary, {
+          voice: selectedVoice?.identifier,
+          pitch: 1.0,
+          rate: 0.9,  // Slightly slower for better clarity
+          onDone: () => setIsPlaying(false),
+          onError: () => setIsPlaying(false),
+        });
+      } catch (error) {
+        console.error('Speech error:', error);
+        setIsPlaying(false);
+      }
+    }
+  };
+
   useEffect(() => {
+    loadVoices();
     loadSavedArticles();
+    return () => {
+      Speech.stop();
+    };
   }, [loadSavedArticles]);
 
   return (
@@ -310,7 +357,7 @@ export default function NewsDetails() {
             shadowOpacity: 0.25,
             shadowRadius: 3.84,
             elevation: 5,
-            maxHeight: height * 0.7, // Maximum 70% of screen height
+            maxHeight: height * 0.7,
           }}
         >
           <View className="flex-row justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
@@ -320,17 +367,29 @@ export default function NewsDetails() {
             >
               Summary
             </Text>
-            <TouchableOpacity 
-              onPress={() => setSummary(null)}
-              className="p-2 rounded-full bg-gray-100 dark:bg-neutral-700"
-            >
-              <XMarkIcon size={20} color={colorScheme === "dark" ? "white" : "gray"} />
-            </TouchableOpacity>
+            <View className="flex-row space-x-3">
+              <TouchableOpacity 
+                onPress={handleSpeak}
+                className="p-2 rounded-full bg-gray-100 dark:bg-neutral-700"
+              >
+                <Ionicons 
+                  name={isPlaying ? "pause-circle" : "play-circle"} 
+                  size={25}
+                  color={colorScheme === "dark" ? "white" : "gray"}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => setSummary(null)}
+                className="p-2 rounded-full bg-gray-100 dark:bg-neutral-700"
+              >
+                <XMarkIcon size={20} color={colorScheme === "dark" ? "white" : "gray"} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <ScrollView 
             className="p-4"
-            style={{ maxHeight: height * 0.6 }} // Allow content to scroll if too long
+            style={{ maxHeight: height * 0.6 }}
           >
             <Text 
               className="text-base text-gray-700 dark:text-gray-300"
