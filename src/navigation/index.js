@@ -12,6 +12,7 @@ import ProfileScreen from "../screens/ProfileScreen";
 import SplashScreens from "../screens/SplashScreens";
 import { Ionicons } from "@expo/vector-icons";
 import SearchScreen from "../screens/SearchScreen";
+import QueryScreen from "../screens/QueryScreen";
 import { useColorScheme } from "nativewind";
 
 const android = Platform.OS === "android";
@@ -38,6 +39,8 @@ const TabNavigator = () => {
             iconName = "bookmark-outline";
           } else if (route.name === "Search") {
             iconName = "search-outline";
+          } else if (route.name === "Query") {
+            iconName = "help-circle-outline";
           }
 
           const customizeSize = 25;
@@ -84,6 +87,13 @@ const TabNavigator = () => {
       <Tab.Screen name="Discover" component={DiscoverScreen} />
       <Tab.Screen name="Saved" component={SavedScreen} />
       <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen 
+        name="Query" 
+        component={QueryScreen}
+        options={{
+          title: "Ask Archives"
+        }}
+      />
     </Tab.Navigator>
   );
 };
@@ -100,6 +110,7 @@ export default function AppNavigation() {
         <Stack.Screen name="SplashS" component={SplashScreens} />
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen name="Search" component={SearchScreen} />
+        <Stack.Screen name="Query" component={QueryScreen} />
         <Stack.Screen
           name="NewsDetails"
           component={NewsDetails}
