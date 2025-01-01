@@ -70,3 +70,20 @@ android/
 env/
 __pycache__/
 *.pyc
+
+# Large model files
+scripts/models/
+assets/tokenizer/
+server/models/
+*.onnx
+*.bin
+*.model
+
+# Environment variables
+.env
+.env.local
+
+# Other common ignores
+node_modules/
+__pycache__/
+*.pyc

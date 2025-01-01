@@ -1,193 +1,105 @@
-import tensorflow as tf
-from transformers import AutoTokenizer, TFAutoModelForSeq2SeqLM
 import os
-import json
-import tensorflowjs as tfjs
-import shutil
-import numpy as np
-import time
+import logging
+import tensorflow as tf
+from transformers import AutoTokenizer, TFAutoModelForSeq2SeqLM, AutoConfig
 
-def read_article(filename):
-    """Read and parse article from archive_texts"""
-    with open(os.path.join("../archive_texts", filename), 'r', encoding='utf-8') as f:
-        content = f.read()
-        
-    # Skip metadata section if it exists
-    if content.startswith('---'):
-        parts = content.split('---', 2)
-        if len(parts) >= 3:
-            return parts[2].strip()
-    return content.strip()
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-def generate_summary(model, tokenizer, article):
-    """Generate summary with timing measurements"""
-    start_time = time.time()
-    
-    # Tokenization time
-    tokenize_start = time.time()
-    inputs = tokenizer(
-        article,
-        max_length=1024,
-        truncation=True,
-        padding='max_length',
-        return_tensors="tf"
-    )
-    tokenize_time = time.time() - tokenize_start
-    
-    # Generation time
-    generate_start = time.time()
-    summary_ids = model.generate(
-        inputs["input_ids"],
-        num_beams=4,
-        max_length=150,
-        min_length=40,
-        length_penalty=2.0,
-        early_stopping=True
-    )
-    generate_time = time.time() - generate_start
-    
-    # Decoding time
-    decode_start = time.time()
-    summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
-    decode_time = time.time() - decode_start
-    
-    total_time = time.time() - start_time
-    
-    timing_info = {
-        'tokenization': tokenize_time,
-        'generation': generate_time,
-        'decoding': decode_time,
-        'total': total_time
-    }
-    
-    return summary, timing_info
-
-def convert_model():
+def convert_to_tflite(model, base_dir):
+    """Convert TF model to TFLite format"""
     try:
-        conversion_start_time = time.time()
-        print("Starting model conversion process...")
+        logger.info("Converting to TFLite...")
         
-        # Set up directories
-        base_dir = "../assets/model"
-        temp_dir = "../assets/model_temp"
+        # Create concrete function that accepts growing decoder sequence
+        class WrappedModel(tf.Module):
+            def __init__(self, model):
+                super().__init__()
+                self.model = model
+            
+            @tf.function(input_signature=[
+                tf.TensorSpec(shape=[1, 128], dtype=tf.int32, name='input_ids'),
+                tf.TensorSpec(shape=[1, 128], dtype=tf.int32, name='attention_mask'),
+                tf.TensorSpec(shape=[1, None], dtype=tf.int32, name='decoder_input_ids')  # Dynamic sequence length
+            ])
+            def generate(self, input_ids, attention_mask, decoder_input_ids):
+                return self.model(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    decoder_input_ids=decoder_input_ids
+                )['logits']
         
-        print(f"Output directory will be: {os.path.abspath(base_dir)}")
+        wrapped_model = WrappedModel(model)
+        concrete_func = wrapped_model.generate.get_concrete_function()
         
-        # Create directories if they don't exist
-        for dir_path in [base_dir, temp_dir]:
-            if not os.path.exists(dir_path):
-                os.makedirs(dir_path)
-                print(f"Created directory: {dir_path}")
-
-        # Load model and tokenizer
-        model_name = "sshleifer/distilbart-cnn-12-6"  # Changed to smaller model
-        print(f"Loading model and tokenizer from {model_name}...")
+        # Convert to TFLite
+        converter = tf.lite.TFLiteConverter.from_concrete_functions([concrete_func])
         
-        model_load_start = time.time()
-        print("Loading tokenizer...")
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        print("Tokenizer loaded successfully")
-        
-        print("Loading model (this might take a few minutes)...")
-        model = TFAutoModelForSeq2SeqLM.from_pretrained(model_name, from_pt=True)
-        model_load_time = time.time() - model_load_start
-        print(f"Model loaded successfully in {model_load_time:.2f} seconds")
-
-        # Test multiple articles to compare quality
-        test_articles = [
-            "phillipian_20200417_covid.txt",
-            "phillipian_20241213_poweroutage.txt"  # Adding a second article for comparison
+        # Enable dynamic shapes
+        converter.target_spec.supported_ops = [
+            tf.lite.OpsSet.TFLITE_BUILTINS,
+            tf.lite.OpsSet.SELECT_TF_OPS
         ]
-
-        for article_file in test_articles:
-            print(f"\nTesting with article: {article_file}")
-            article = read_article(article_file)
-            print("\nOriginal Article Preview (first 500 chars):")
-            print(article[:500], "...\n")
-            
-            # Generate summary with timing
-            summary, timing = generate_summary(model, tokenizer, article)
-            
-            print("\nGenerated Summary:")
-            print(summary)
-            print("\nTiming Information:")
-            print(f"Tokenization time: {timing['tokenization']:.3f} seconds")
-            print(f"Generation time: {timing['generation']:.3f} seconds")
-            print(f"Decoding time: {timing['decoding']:.3f} seconds")
-            print(f"Total inference time: {timing['total']:.3f} seconds")
-            print("-" * 80)
-
-        # Define serving function
-        @tf.function(input_signature=[{
-            "input_ids": tf.TensorSpec(shape=[None, None], dtype=tf.int32),
-            "attention_mask": tf.TensorSpec(shape=[None, None], dtype=tf.int32),
-        }])
-        def serving_fn(inputs):
-            outputs = model(inputs, training=False)
-            return {"logits": outputs.logits}
-
-        # Save as SavedModel format
-        print("\nSaving as SavedModel format...")
-        savedmodel_start = time.time()
-        tf.saved_model.save(
-            model,
-            temp_dir,
-            signatures={"serving_default": serving_fn}
-        )
-        savedmodel_time = time.time() - savedmodel_start
-        print(f"SavedModel saved successfully in {savedmodel_time:.2f} seconds")
-
-        # Convert to TensorFlow.js format
-        print("Converting model to TensorFlow.js format...")
-        tfjs_start = time.time()
-        tfjs.converters.convert_tf_saved_model(
-            temp_dir,
-            base_dir,
-            skip_op_check=True,
-            strip_debug_ops=True
-        )
-        tfjs_time = time.time() - tfjs_start
-        print(f"Model converted to TF.js in {tfjs_time:.2f} seconds")
-
-        # Calculate final model size
-        model_size = sum(os.path.getsize(os.path.join(base_dir, f)) 
-                        for f in os.listdir(base_dir) 
-                        if os.path.isfile(os.path.join(base_dir, f)))
-        print(f"\nFinal model size: {model_size / (1024*1024):.2f} MB")
-
-        # Save tokenizer and configuration
-        print("Saving tokenizer and configuration...")
-        tokenizer_start = time.time()
-        tokenizer.save_pretrained(base_dir)
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        converter.target_spec.supported_types = [tf.float32]  # Use full precision for better quality
+        converter.allow_custom_ops = True
+        converter.experimental_new_converter = True
         
-        model_config = model.config.to_dict()
-        config_path = os.path.join(base_dir, "config.json")
-        with open(config_path, "w") as f:
-            json.dump(model_config, f)
-        tokenizer_time = time.time() - tokenizer_start
-        print(f"Configuration saved in {tokenizer_time:.2f} seconds")
-
-        # Clean up temporary directory
-        print("Cleaning up temporary files...")
-        shutil.rmtree(temp_dir)
-        print("Cleanup completed")
-
-        total_conversion_time = time.time() - conversion_start_time
-        print(f"\nTotal conversion process took {total_conversion_time:.2f} seconds")
-        print("\nBreakdown:")
-        print(f"- Model loading: {model_load_time:.2f}s")
-        print(f"- SavedModel creation: {savedmodel_time:.2f}s")
-        print(f"- TF.js conversion: {tfjs_time:.2f}s")
-        print(f"- Tokenizer/config saving: {tokenizer_time:.2f}s")
-
+        # Important: Enable dynamic shapes
+        converter._experimental_disable_per_channel = True
+        converter.experimental_enable_resource_variables = True
+        
+        # Convert model
+        logger.info("Starting conversion...")
+        tflite_model = converter.convert()
+        
+        # Save model
+        os.makedirs(os.path.join(base_dir, 'assets/model'), exist_ok=True)
+        tflite_path = os.path.join(base_dir, 'assets/model/model.tflite')
+        with open(tflite_path, 'wb') as f:
+            f.write(tflite_model)
+            
+        logger.info(f"TFLite model saved to {tflite_path}")
+        return tflite_path
+        
     except Exception as e:
-        print(f"Error during conversion: {str(e)}")
-        print(f"Error type: {type(e)}")
-        import traceback
-        traceback.print_exc()
-        raise e
+        logger.error(f"Error in convert_to_tflite: {str(e)}")
+        raise
+
+def convert_model(model_name="facebook/bart-large-cnn", base_dir="."):
+    """Convert and save the model and tokenizer"""
+    try:
+        logger.info(f"Loading model and tokenizer from {model_name}...")
+        
+        config = AutoConfig.from_pretrained(model_name)
+        config.use_cache = False
+        
+        model = TFAutoModelForSeq2SeqLM.from_pretrained(
+            model_name,
+            config=config,
+            from_pt=True
+        )
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        
+        # Save tokenizer
+        tokenizer_path = os.path.join(base_dir, 'assets/tokenizer')
+        os.makedirs(tokenizer_path, exist_ok=True)
+        tokenizer.save_pretrained(tokenizer_path)
+        
+        # Convert and save model
+        tflite_path = convert_to_tflite(model, base_dir)
+        
+        logger.info("Model conversion completed successfully!")
+        return tflite_path
+        
+    except Exception as e:
+        logger.error(f"Error during conversion: {str(e)}")
+        raise
 
 if __name__ == "__main__":
-    print("Script started")
-    convert_model()
-    print("Script finished")
+    try:
+        convert_model()
+    except Exception as e:
+        logger.error(f"Failed to convert model: {str(e)}")
+        raise

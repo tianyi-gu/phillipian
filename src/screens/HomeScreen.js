@@ -14,7 +14,7 @@ import axios from "axios";
 
 const { width: screenWidth } = Dimensions.get('window');
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   const { colorScheme, toggleColorScheme } = useColorScheme();
 
   // Initialize dark mode
@@ -111,7 +111,19 @@ export default function HomeScreen() {
             <TouchableOpacity 
               activeOpacity={0.7}
               onPress={() => {
-                // Your existing navigation or press handling
+                console.log('Item structure:', JSON.stringify(item, null, 2));
+                
+                const articleData = {
+                  title: item.title?.rendered || 'No Title',
+                  content: item.content?.rendered || '',
+                  author: item.yoast_head_json?.author || 'Unknown',
+                  publishDate: new Date(item.date).toLocaleDateString(),
+                  filename: `phillipian_${item.date.split('T')[0].replace(/-/g, '')}.txt`
+                };
+                
+                navigation.navigate('NewsDetails', {
+                  article: articleData
+                });
               }}
               style={{ width: '100%' }}
             >
