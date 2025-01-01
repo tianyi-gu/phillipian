@@ -5,12 +5,12 @@ from scripts.summarizer import Summarizer
 from haystack.document_stores import InMemoryDocumentStore
 from haystack.nodes import BM25Retriever, TransformersReader
 from haystack.pipelines import ExtractiveQAPipeline
+from transformers import MarianMTModel, MarianTokenizer
 import os
 import logging
 from typing import Optional, Dict
-import whisper
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
@@ -36,14 +36,25 @@ class TranslateRequest(BaseModel):
     text: str
     target_language: str
 
+# Dictionary mapping language codes to Marian model names
+LANGUAGE_MODELS = {
+    'es': 'Helsinki-NLP/opus-mt-en-es',
+    'fr': 'Helsinki-NLP/opus-mt-en-fr',
+    'de': 'Helsinki-NLP/opus-mt-en-de',
+    'zh': 'Helsinki-NLP/opus-mt-en-zh',
+    'ru': 'Helsinki-NLP/opus-mt-en-ru',
+    'ja': 'Helsinki-NLP/opus-mt-en-jap',
+    'ko': 'Helsinki-NLP/opus-mt-en-ko',
+    'ar': 'Helsinki-NLP/opus-mt-en-ar',
+    'hi': 'Helsinki-NLP/opus-mt-en-hi',
+}
+
+# Cache for models and tokenizers
+model_cache = {}
+
 # Initialize components
 summarizer = Summarizer()
 model_name = "deepset/deberta-v3-base-squad2"
-
-# Initialize Whisper model
-logger.warning("Loading Whisper model...")
-whisper_model = whisper.load_model("base")
-logger.warning("Whisper model loaded successfully")
 
 # Configure document store with better similarity settings
 document_store = InMemoryDocumentStore(
@@ -199,17 +210,73 @@ async def query_archives(request: QueryRequest):
 @app.post("/api/translate")
 async def translate_text(request: TranslateRequest):
     try:
-        logger.warning(f"Translating to {request.target_language}")
-        result = whisper_model.translate(
-            request.text,
-            task="translate",
-            language=request.target_language
-        )
+        if request.target_language == 'en':
+            return {"translated_text": request.text, "source_language": "en"}
+
+        if request.target_language not in LANGUAGE_MODELS:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Unsupported target language: {request.target_language}"
+            )
+
+        model_name = LANGUAGE_MODELS[request.target_language]
+        
+        # Get or load model and tokenizer
+        if model_name not in model_cache:
+            logger.info(f"Loading translation model for {request.target_language}")
+            tokenizer = MarianTokenizer.from_pretrained(model_name)
+            model = MarianMTModel.from_pretrained(model_name)
+            model_cache[model_name] = (model, tokenizer)
+        else:
+            model, tokenizer = model_cache[model_name]
+
+        # Split text into sentences
+        sentences = request.text.replace('\n', ' ').split('. ')
+        translated_chunks = []
+        current_chunk = []
+        current_length = 0
+
+        for sentence in sentences:
+            # Add period back if it's not the last sentence
+            if sentence != sentences[-1]:
+                sentence += '.'
+            
+            # Tokenize sentence to check length
+            tokens = tokenizer.encode(sentence)
+            
+            if current_length + len(tokens) > 512:
+                # Translate current chunk
+                chunk_text = ' '.join(current_chunk)
+                encoded = tokenizer(chunk_text, return_tensors="pt", padding=True)
+                translated = model.generate(**encoded)
+                translated_text = tokenizer.decode(translated[0], skip_special_tokens=True)
+                translated_chunks.append(translated_text)
+                
+                # Start new chunk
+                current_chunk = [sentence]
+                current_length = len(tokens)
+            else:
+                current_chunk.append(sentence)
+                current_length += len(tokens)
+
+        # Translate final chunk if any
+        if current_chunk:
+            chunk_text = ' '.join(current_chunk)
+            encoded = tokenizer(chunk_text, return_tensors="pt", padding=True)
+            translated = model.generate(**encoded)
+            translated_text = tokenizer.decode(translated[0], skip_special_tokens=True)
+            translated_chunks.append(translated_text)
+
+        # Combine all translated chunks
+        final_translation = ' '.join(translated_chunks)
+
+        logger.info(f"Successfully translated text to {request.target_language}")
         
         return {
-            "translated_text": result,
-            "source_language": "auto-detected"
+            "translated_text": final_translation,
+            "source_language": "en"
         }
+
     except Exception as e:
         logger.error(f"Translation error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

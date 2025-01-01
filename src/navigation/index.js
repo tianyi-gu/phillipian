@@ -32,18 +32,18 @@ const TabNavigator = () => {
           let iconName;
 
           if (route.name === "Home") {
-            iconName = "home";
+            iconName = focused ? "home" : "home-outline";
           } else if (route.name === "Discover") {
-            iconName = "compass-outline";
-          } else if (route.name === "Saved") {
-            iconName = "bookmark-outline";
+            iconName = focused ? "compass" : "compass-outline";
           } else if (route.name === "Search") {
-            iconName = "search-outline";
+            iconName = focused ? "search" : "search-outline";
+          } else if (route.name === "Saved") {
+            iconName = focused ? "bookmark" : "bookmark-outline";
           } else if (route.name === "Query") {
-            iconName = "help-circle-outline";
+            iconName = focused ? "help-circle" : "help-circle-outline";
           }
 
-          const customizeSize = 25;
+          const customizeSize = 32;
 
           return (
             <Ionicons
@@ -59,11 +59,16 @@ const TabNavigator = () => {
         tabBarLabelStyle: {
           fontSize: 12,
           fontFamily: "SpaceGroteskMedium",
+          marginTop: 2,
+          paddingBottom: 5,
         },
         tabBarStyle: {
           backgroundColor: colorScheme == "dark" ? "black" : "white",
           borderTopWidth: 1,
           borderTopColor: colorScheme === "dark" ? "#333" : "#eee",
+          height: 100,
+          paddingTop: 5,
+          paddingBottom: 25,
         },
         tabBarButton: (props) => {
           const { onPress, ...otherProps } = props;
@@ -74,9 +79,10 @@ const TabNavigator = () => {
               activeOpacity={0.7}
               style={{
                 flex: 1,
-                paddingVertical: 8,
+                paddingVertical: 5,
                 justifyContent: 'center',
                 alignItems: 'center',
+                marginTop: -8,
               }}
             />
           );
