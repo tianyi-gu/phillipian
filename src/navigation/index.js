@@ -12,6 +12,7 @@ import ProfileScreen from "../screens/ProfileScreen";
 import SplashScreens from "../screens/SplashScreens";
 import { Ionicons } from "@expo/vector-icons";
 import SearchScreen from "../screens/SearchScreen";
+import QueryScreen from "../screens/QueryScreen";
 import { useColorScheme } from "nativewind";
 
 const android = Platform.OS === "android";
@@ -31,16 +32,18 @@ const TabNavigator = () => {
           let iconName;
 
           if (route.name === "Home") {
-            iconName = "home";
+            iconName = focused ? "home" : "home-outline";
           } else if (route.name === "Discover") {
-            iconName = "compass-outline";
-          } else if (route.name === "Saved") {
-            iconName = "bookmark-outline";
+            iconName = focused ? "compass" : "compass-outline";
           } else if (route.name === "Search") {
-            iconName = "search-outline";
+            iconName = focused ? "search" : "search-outline";
+          } else if (route.name === "Saved") {
+            iconName = focused ? "bookmark" : "bookmark-outline";
+          } else if (route.name === "Query") {
+            iconName = focused ? "help-circle" : "help-circle-outline";
           }
 
-          const customizeSize = 25;
+          const customizeSize = 32;
 
           return (
             <Ionicons
@@ -56,11 +59,16 @@ const TabNavigator = () => {
         tabBarLabelStyle: {
           fontSize: 12,
           fontFamily: "SpaceGroteskMedium",
+          marginTop: 2,
+          paddingBottom: 5,
         },
         tabBarStyle: {
           backgroundColor: colorScheme == "dark" ? "black" : "white",
           borderTopWidth: 1,
           borderTopColor: colorScheme === "dark" ? "#333" : "#eee",
+          height: 100,
+          paddingTop: 5,
+          paddingBottom: 25,
         },
         tabBarButton: (props) => {
           const { onPress, ...otherProps } = props;
@@ -71,9 +79,10 @@ const TabNavigator = () => {
               activeOpacity={0.7}
               style={{
                 flex: 1,
-                paddingVertical: 8,
+                paddingVertical: 5,
                 justifyContent: 'center',
                 alignItems: 'center',
+                marginTop: -8,
               }}
             />
           );
@@ -84,6 +93,13 @@ const TabNavigator = () => {
       <Tab.Screen name="Discover" component={DiscoverScreen} />
       <Tab.Screen name="Saved" component={SavedScreen} />
       <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen 
+        name="Query" 
+        component={QueryScreen}
+        options={{
+          title: "Ask Archives"
+        }}
+      />
     </Tab.Navigator>
   );
 };
@@ -100,6 +116,7 @@ export default function AppNavigation() {
         <Stack.Screen name="SplashS" component={SplashScreens} />
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen name="Search" component={SearchScreen} />
+        <Stack.Screen name="Query" component={QueryScreen} />
         <Stack.Screen
           name="NewsDetails"
           component={NewsDetails}

@@ -75,13 +75,29 @@ export default function SearchScreen() {
 
   return (
     <View className="flex-1 bg-white dark:bg-neutral-900">
+      {/* Header */}
+      <View className="pt-12 px-4 pb-4">
+        <Text 
+          className="text-4xl text-black dark:text-white"
+          style={{ fontFamily: "SpaceGroteskBold" }}
+        >
+          Search
+        </Text>
+        <Text 
+          className="text-base text-gray-600 dark:text-gray-400 mt-1"
+          style={{ fontFamily: "SpaceGrotesk" }}
+        >
+          Find Articles from The Phillipian!
+        </Text>
+      </View>
+
       {/* Search Input */}
-      <View className="mx-4 mb-4 mt-14 flex-row justify-between items-center bg-neutral-100 rounded-lg">
+      <View className="mx-4 mb-4 flex-row justify-between items-center bg-neutral-100 dark:bg-neutral-800 rounded-lg">
         <TextInput
           onChangeText={handleTextDebounce}
           placeholder="Search"
           placeholderTextColor={"gray"}
-          className="font-medium text-black tracking-wider px-4 py-3 w-[90%]"
+          className="font-medium text-black dark:text-white tracking-wider px-4 py-3 w-[90%]"
         />
         <TouchableOpacity 
           onPress={() => navigation.navigate("Home")}

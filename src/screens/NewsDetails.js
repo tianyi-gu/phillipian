@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { View, Text, ActivityIndicator, TouchableOpacity, Dimensions, Share, ScrollView } from "react-native";
+import { View, Text, ActivityIndicator, TouchableOpacity, Dimensions, Share, ScrollView, Platform, Alert } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { ChevronLeftIcon, ShareIcon, XMarkIcon } from "react-native-heroicons/outline";
+import { ChevronLeftIcon, ShareIcon, XMarkIcon, LanguageIcon } from "react-native-heroicons/outline";
 import { BookmarkSquareIcon } from "react-native-heroicons/solid";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WebView } from "react-native-webview";
 import { useColorScheme } from "nativewind";
 import { API_URL } from '../config/api';
+import { Ionicons } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
+import RNPickerSelect from 'react-native-picker-select';
 
 const { height, width } = Dimensions.get("window");
 const STORAGE_KEY = "savedArticles";
@@ -100,6 +103,25 @@ const INJECTED_JAVASCRIPT = `
   })();
 `;
 
+const pickerSelectStyles = {
+  inputIOS: {
+    fontSize: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: 'gray',
+    borderRadius: 8,
+    color: 'black',
+    paddingRight: 30, // to ensure the text is never behind the icon
+    height: 36,
+    minWidth: 90,
+    maxWidth: 120,
+  },
+  inputAndroid: {
+    // keep existing Android styles
+  }
+};
+
 export default function NewsDetails() {
   const { params: item } = useRoute();
   const [visible, setVisible] = useState(false);
@@ -111,6 +133,30 @@ export default function NewsDetails() {
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setError] = useState(null);
+  const [targetLanguage, setTargetLanguage] = useState('en');
+  const [translatedContent, setTranslatedContent] = useState(null);
+  const [translating, setTranslating] = useState(false);
+
+  const languages = {
+    'en': 'English',
+    'es': 'Spanish',
+    'fr': 'French',
+    'zh': 'Chinese',
+    'ja': 'Japanese',
+    'ko': 'Korean',
+    'de': 'German',
+    'ru': 'Russian',
+    'ar': 'Arabic',
+    'hi': 'Hindi'
+  };
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [voices, setVoices] = useState([]);
+  const [selectedVoice, setSelectedVoice] = useState(null);
+
+  const pickerItems = Object.entries(languages).map(([code, name]) => ({
+    label: code.toUpperCase(),
+    value: code,
+  }));
 
   const generateSummary = async () => {
     setSummaryLoading(true);
@@ -125,7 +171,7 @@ export default function NewsDetails() {
         date: item.date || ''
       };
       
-      console.log('Sending article data:', articleData);
+      // console.log('Sending article data:', articleData);
       
       const response = await fetch(`${API_URL}/api/summarize`, {
         method: 'POST',
@@ -135,9 +181,9 @@ export default function NewsDetails() {
         body: JSON.stringify(articleData),
       });
 
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
+      // console.log('Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to generate summary');
@@ -206,13 +252,146 @@ export default function NewsDetails() {
     }
   }, [item]);
 
+  const handleTranslate = async (lang) => {
+    if (lang === targetLanguage) return;
+    
+    // Update the language display immediately
+    setTargetLanguage(lang);
+    
+    if (lang === 'en') {
+      setTranslatedContent(null);
+      return;
+    }
+
+    setTranslating(true);
+    let retryCount = 0;
+    const maxRetries = 2;
+
+    const tryTranslation = async () => {
+      try {
+        const textToTranslate = summary;
+        if (!textToTranslate) {
+          console.error('No text to translate');
+          return;
+        }
+
+        const response = await fetch(`${API_URL}/api/translate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: textToTranslate,
+            target_language: lang
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.translated_text) {
+          setTranslatedContent(data.translated_text);
+        } else {
+          throw new Error('No translation received');
+        }
+
+      } catch (error) {
+        console.error('Translation error:', error);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`Retrying translation (${retryCount}/${maxRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return tryTranslation();
+        }
+        
+        Alert.alert(
+          'Translation Error',
+          'Failed to translate. Please try again later.',
+          [{ text: 'OK' }]
+        );
+        
+        // On error, keep the selected language but clear translated content
+        setTranslatedContent(null);
+      }
+    };
+
+    try {
+      await tryTranslation();
+    } finally {
+      setTranslating(false);
+    }
+  };
+
+  const loadVoices = async () => {
+    try {
+      const availableVoices = await Speech.getAvailableVoicesAsync();
+      // Filter for better quality voices (usually en-US or en-GB)
+      const bestVoices = availableVoices.filter(voice => 
+        (voice.identifier.includes('en-US') || voice.identifier.includes('en-GB')) &&
+        voice.quality === Speech.VoiceQuality.Enhanced
+      );
+      setVoices(bestVoices);
+      if (bestVoices.length > 0) {
+        setSelectedVoice(bestVoices[0]);
+      }
+    } catch (error) {
+      console.error('Error loading voices:', error);
+    }
+  };
+
+  const handleSpeak = async () => {
+    if (isPlaying) {
+      await Speech.stop();
+      setIsPlaying(false);
+    } else {
+      setIsPlaying(true);
+      try {
+        await Speech.speak(summary, {
+          voice: selectedVoice?.identifier,
+          pitch: 1.0,
+          rate: 0.9,  // Slightly slower for better clarity
+          onDone: () => setIsPlaying(false),
+          onError: () => setIsPlaying(false),
+        });
+      } catch (error) {
+        console.error('Speech error:', error);
+        setIsPlaying(false);
+      }
+    }
+  };
+
   useEffect(() => {
+    loadVoices();
     loadSavedArticles();
+    return () => {
+      Speech.stop();
+    };
   }, [loadSavedArticles]);
 
+  // Add a function to get language display name
+  const getLanguageDisplay = (code) => {
+    const languageMap = {
+      'en': 'EN',
+      'es': 'ES',
+      'fr': 'FR',
+      'de': 'DE',
+      'zh': 'ZH',
+      'ja': 'JA',
+      'ko': 'KO',
+      'ru': 'RU',
+      'ar': 'AR',
+      'hi': 'HI'
+    };
+    return languageMap[code] || code.toUpperCase();
+  };
+
   return (
-    <View className="flex-1 bg-white dark:bg-neutral-900" style={{ backgroundColor: colorScheme === 'dark' ? '#171717' : '#ffffff' }}>
-      <View className="w-full flex-row justify-between items-center px-4 pt-10 pb-4 bg-white dark:bg-neutral-800" style={{ backgroundColor: colorScheme === 'dark' ? '#262626' : '#ffffff' }}>
+    <View className="flex-1 bg-white dark:bg-neutral-900">
+      <View className="w-full flex-row justify-between items-center px-4 pt-10 pb-4 bg-white dark:bg-neutral-800">
         <TouchableOpacity 
           onPress={() => navigation.goBack()} 
           className="bg-gray-100 dark:bg-neutral-700 p-2 rounded-full"
@@ -225,16 +404,6 @@ export default function NewsDetails() {
         </TouchableOpacity>
 
         <View className="flex-row space-x-3">
-          <TouchableOpacity 
-            className="bg-gray-100 dark:bg-neutral-700 p-2 rounded-full"
-            onPress={generateSummary}
-            disabled={summaryLoading}
-          >
-            <Text style={{ color: colorScheme === "dark" ? "white" : "gray" }}>
-              {summaryLoading ? "..." : "Summary"}
-            </Text>
-          </TouchableOpacity>
-
           <TouchableOpacity 
             className="bg-gray-100 dark:bg-neutral-700 p-2 rounded-full"
             onPress={handleShare}
@@ -296,84 +465,179 @@ export default function NewsDetails() {
       )}
 
       {summary ? (
-        <View 
-          className="absolute bottom-0 left-0 right-0 bg-white dark:bg-neutral-800"
-          style={{ 
-            backgroundColor: colorScheme === 'dark' ? '#262626' : '#ffffff',
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
+        <View className="absolute bottom-0 left-0 right-0 bg-neutral-900">
+          <View className="flex-row justify-between items-center px-4 py-3 border-b border-neutral-800">
+            <View className="flex-row items-center space-x-4">
+              <Text className="text-lg font-semibold text-white">
+                Summary
+              </Text>
+              <TouchableOpacity 
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#404040',
+                  borderRadius: 8,
+                  height: 32,
+                  paddingHorizontal: 8,
+                  opacity: translating ? 0.6 : 1,
+                }}
+                onPress={() => {
+                  if (translating) return;
+                  Alert.alert(
+                    "Select Language",
+                    "",
+                    [
+                      { 
+                        text: "English (EN)", 
+                        onPress: () => handleTranslate('en'),
+                        style: targetLanguage === 'en' ? 'default' : 'none'
+                      },
+                      { 
+                        text: "Spanish (ES)", 
+                        onPress: () => handleTranslate('es'),
+                        style: targetLanguage === 'es' ? 'default' : 'none'
+                      },
+                      { 
+                        text: "French (FR)", 
+                        onPress: () => handleTranslate('fr'),
+                        style: targetLanguage === 'fr' ? 'default' : 'none'
+                      },
+                      { 
+                        text: "German (DE)", 
+                        onPress: () => handleTranslate('de'),
+                        style: targetLanguage === 'de' ? 'default' : 'none'
+                      },
+                      { 
+                        text: "Chinese (ZH)", 
+                        onPress: () => handleTranslate('zh'),
+                        style: targetLanguage === 'zh' ? 'default' : 'none'
+                      },
+                      { 
+                        text: "Japanese (JA)", 
+                        onPress: () => handleTranslate('ja'),
+                        style: targetLanguage === 'ja' ? 'default' : 'none'
+                      },
+                      { 
+                        text: "Korean (KO)", 
+                        onPress: () => handleTranslate('ko'),
+                        style: targetLanguage === 'ko' ? 'default' : 'none'
+                      },
+                      { 
+                        text: "Russian (RU)", 
+                        onPress: () => handleTranslate('ru'),
+                        style: targetLanguage === 'ru' ? 'default' : 'none'
+                      },
+                      { 
+                        text: "Arabic (AR)", 
+                        onPress: () => handleTranslate('ar'),
+                        style: targetLanguage === 'ar' ? 'default' : 'none'
+                      },
+                      { 
+                        text: "Hindi (HI)", 
+                        onPress: () => handleTranslate('hi'),
+                        style: targetLanguage === 'hi' ? 'default' : 'none'
+                      },
+                      { text: "Cancel", style: "cancel" }
+                    ]
+                  );
+                }}
+                disabled={translating}
+              >
+                <LanguageIcon 
+                  size={14} 
+                  color="white"
+                  style={{ marginRight: 4 }}
+                />
+                <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
+                  {getLanguageDisplay(targetLanguage)}
+                </Text>
+                {translating ? (
+                  <ActivityIndicator 
+                    size="small" 
+                    color="white" 
+                    style={{ marginLeft: 4 }}
+                  />
+                ) : (
+                  <View style={{ 
+                    height: 8, 
+                    width: 8, 
+                    borderTopWidth: 2, 
+                    borderRightWidth: 2, 
+                    borderColor: 'white',
+                    transform: [{ rotate: '135deg' }],
+                    marginLeft: 4,
+                    marginTop: -4,
+                  }} />
+                )}
+              </TouchableOpacity>
+            </View>
+            <View className="flex-row space-x-3">
+              <TouchableOpacity 
+                onPress={handleSpeak}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: '#404040',
+                }}
+              >
+                <Ionicons 
+                  name={isPlaying ? "pause-circle" : "play-circle"} 
+                  size={20}
+                  color="white"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => setSummary(null)}
+                style={{
+                  padding: 8,
+                  borderRadius: 20,
+                  backgroundColor: '#404040',
+                }}
+              >
+                <XMarkIcon size={16} color="white" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <ScrollView className="p-4" style={{ maxHeight: height * 0.6 }}>
+            {translating ? (
+              <ActivityIndicator 
+                size="large" 
+                color="white"
+              />
+            ) : (
+              <Text className="text-base text-gray-300">
+                {translatedContent || summary}
+              </Text>
+            )}
+          </ScrollView>
+        </View>
+      ) : (
+        <TouchableOpacity
+          onPress={generateSummary}
+          disabled={summaryLoading}
+          className="absolute bottom-4 right-4 bg-neutral-800 dark:bg-neutral-900 p-4 rounded-full shadow-lg"
+          style={{
+            opacity: summaryLoading ? 0.6 : 1,
             shadowColor: "#000",
             shadowOffset: {
               width: 0,
-              height: -2,
+              height: 2,
             },
             shadowOpacity: 0.25,
             shadowRadius: 3.84,
             elevation: 5,
-            maxHeight: height * 0.7, // Maximum 70% of screen height
           }}
         >
-          <View className="flex-row justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-            <Text 
-              className="text-lg font-semibold text-gray-900 dark:text-white"
-              style={{ color: colorScheme === 'dark' ? '#ffffff' : '#000000' }}
-            >
-              Summary
-            </Text>
-            <TouchableOpacity 
-              onPress={() => setSummary(null)}
-              className="p-2 rounded-full bg-gray-100 dark:bg-neutral-700"
-            >
-              <XMarkIcon size={20} color={colorScheme === "dark" ? "white" : "gray"} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView 
-            className="p-4"
-            style={{ maxHeight: height * 0.6 }} // Allow content to scroll if too long
-          >
-            <Text 
-              className="text-base text-gray-700 dark:text-gray-300"
-              style={{ color: colorScheme === 'dark' ? '#d1d1d1' : '#4a4a4a' }}
-            >
-              {summary}
-            </Text>
-          </ScrollView>
-        </View>
-      ) : (
-        <View 
-          className="absolute bottom-0 left-0 right-0 p-4 bg-white dark:bg-neutral-800"
-          style={{ 
-            backgroundColor: colorScheme === 'dark' ? '#262626' : '#ffffff',
-            borderTopWidth: 1,
-            borderTopColor: colorScheme === 'dark' ? '#404040' : '#e5e5e5'
-          }}
-        >
-          <TouchableOpacity 
-            className="w-full bg-white dark:bg-neutral-700 rounded-lg py-3 items-center border border-gray-200 dark:border-gray-600"
-            style={{ 
-              opacity: summaryLoading ? 0.7 : 1 
-            }}
-            onPress={generateSummary}
-            disabled={summaryLoading}
-          >
-            <Text 
-              className="font-semibold text-lg"
-              style={{ 
-                color: colorScheme === 'dark' ? '#ffffff' : '#000000'
-              }}
-            >
-              {summaryLoading ? "Generating Summary..." : "Generate Summary"}
-            </Text>
+          <View className="flex-row items-center space-x-2">
             {summaryLoading && (
-              <ActivityIndicator 
-                color={colorScheme === 'dark' ? '#ffffff' : '#000000'}
-                style={{ marginLeft: 8 }}
-                size="small"
-              />
+              <ActivityIndicator size="small" color="white" />
             )}
-          </TouchableOpacity>
-        </View>
+            <Text className="text-white font-bold">
+              {summaryLoading ? "Generating..." : "Generate Summary"}
+            </Text>
+          </View>
+        </TouchableOpacity>
       )}
     </View>
   );

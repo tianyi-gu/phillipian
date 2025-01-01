@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, FlatList, Platform, Dimensions, TouchableOpacity } from "react-native";
+import { View, FlatList, Platform, Dimensions, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "nativewind";
 import { StatusBar } from "expo-status-bar";
@@ -13,6 +13,38 @@ import BreakingNews from "../components/BreakingNews";
 import axios from "axios";
 
 const { width: screenWidth } = Dimensions.get('window');
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingBottom: 80,
+  },
+  queryButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    backgroundColor: '#0066cc',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 25,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  queryButtonText: {
+    color: 'white',
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
 
 export default function HomeScreen({ navigation }) {
   const { colorScheme, toggleColorScheme } = useColorScheme();
