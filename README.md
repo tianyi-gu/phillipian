@@ -74,7 +74,7 @@ The server runs on port 5001 and provides the `/api/summarize` endpoint for arti
 
 ## Development Notes
 - The app uses React Native with Expo
-- Backend uses Flask with CORS enabled
+- Backend uses FastAPI
 - Article summaries are generated in real-time
 - Dark mode support throughout the app
 
