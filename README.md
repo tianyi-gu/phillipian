@@ -79,11 +79,15 @@ The server runs on port 5001 and provides the `/api/summarize` endpoint for arti
 - Dark mode support throughout the app
 
 tradeoffs between models size/ speed/ accuracy:
-summary model: 
-facebook/bart-large-cnn, 
-also tried: models--sshleifer--distilbart-cnn-12-6
+Summary model: 
+- Facebook/bart-large-cnn, 
 
-for question answering task:
-deberta-v3-base-squad2
-also tried: distilbert-base-uncased-distilled-squad
+Question answering model:
+- Production: deepset/deberta-v3-base-squad2
+- Using Haystack framework with:
+  - BM25Retriever for document retrieval
+  - TransformersReader for answer extraction
+- Optimized with custom BM25 parameters (b=0.75, k1=1.2)
 
+Translation models:
+- Using Marian Neural Machine Translation (Helsinki-NLP)
