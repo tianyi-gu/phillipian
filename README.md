@@ -77,3 +77,13 @@ The server runs on port 5001 and provides the `/api/summarize` endpoint for arti
 - Backend uses Flask with CORS enabled
 - Article summaries are generated in real-time
 - Dark mode support throughout the app
+
+tradeoffs between models size/ speed/ accuracy:
+summary model: 
+facebook/bart-large-cnn, 
+also tried: models--sshleifer--distilbart-cnn-12-6
+
+for question answering task:
+deberta-v3-base-squad2
+also tried: distilbert-base-uncased-distilled-squad
+
