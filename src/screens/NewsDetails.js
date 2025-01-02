@@ -344,23 +344,53 @@ export default function NewsDetails() {
   };
 
   const handleSpeak = async () => {
-    if (isPlaying) {
-      await Speech.stop();
-      setIsPlaying(false);
-    } else {
-      setIsPlaying(true);
-      try {
-        await Speech.speak(summary, {
-          voice: selectedVoice?.identifier,
-          pitch: 1.0,
-          rate: 0.9,  // Slightly slower for better clarity
-          onDone: () => setIsPlaying(false),
-          onError: () => setIsPlaying(false),
-        });
-      } catch (error) {
-        console.error('Speech error:', error);
+    try {
+      const textToSpeak = translatedContent || summary;
+      
+      // Stop any ongoing speech
+      if (isPlaying) {
+        await Speech.stop();
         setIsPlaying(false);
+        return;
       }
+
+      // Configure speech options based on selected language
+      const languageVoiceMap = {
+        'en': 'en-US',
+        'es': 'es-ES',
+        'fr': 'fr-FR',
+        'de': 'de-DE',
+        'zh': 'zh-CN',
+        'ja': 'ja-JP',
+        'ko': 'ko-KR',
+        'ru': 'ru-RU',
+        'ar': 'ar-SA',
+        'hi': 'hi-IN'
+      };
+
+      const options = {
+        language: languageVoiceMap[targetLanguage] || 'en-US',
+        pitch: 1.0,
+        rate: 0.9,
+      };
+
+      setIsPlaying(true);
+      
+      await Speech.speak(textToSpeak, {
+        ...options,
+        onDone: () => {
+          setIsPlaying(false);
+        },
+        onError: (error) => {
+          console.error('Speech error:', error);
+          setIsPlaying(false);
+        }
+      });
+
+    } catch (error) {
+      console.error('Speech error:', error);
+      setIsPlaying(false);
+      Alert.alert('Error', 'Failed to play speech');
     }
   };
 
