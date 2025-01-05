@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { View, Text, ActivityIndicator, TouchableOpacity, Dimensions, Share } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { ChevronLeftIcon, ShareIcon } from "react-native-heroicons/outline";
-import { BookmarkSquareIcon } from "react-native-heroicons/solid";
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { WebView } from "react-native-webview";
 import { useColorScheme } from "nativewind";
@@ -213,10 +212,10 @@ export default function NewsDetails() {
           onPress={() => navigation.goBack()} 
           className="bg-gray-100 dark:bg-neutral-700 p-2 rounded-full"
         >
-          <ChevronLeftIcon 
-            size={25} 
-            strokeWidth={3} 
-            color={colorScheme === "dark" ? "white" : "gray"} 
+          <Ionicons 
+            name="chevron-back" 
+            size={24} 
+            color={colorScheme === "dark" ? "white" : "black"}
           />
         </TouchableOpacity>
 
@@ -225,20 +224,20 @@ export default function NewsDetails() {
             className="bg-gray-100 dark:bg-neutral-700 p-2 rounded-full"
             onPress={handleShare}
           >
-            <ShareIcon 
-              size={25} 
-              color={colorScheme === "dark" ? "white" : "gray"} 
-              strokeWidth={2} 
+            <Ionicons 
+              name="share-outline" 
+              size={24} 
+              color={colorScheme === "dark" ? "white" : "black"}
             />
           </TouchableOpacity>
           <TouchableOpacity 
-            className="bg-gray-100 dark:bg-neutral-700 p-2 rounded-full" 
+            className="bg-gray-100 dark:bg-neutral-700 p-2 rounded-full"
             onPress={toggleBookmarkAndSave}
           >
-            <BookmarkSquareIcon 
-              size={25} 
-              color={isBookmarked ? "green" : (colorScheme === "dark" ? "white" : "gray")} 
-              strokeWidth={2} 
+            <Ionicons 
+              name={isBookmarked ? "bookmark" : "bookmark-outline"}
+              size={24} 
+              color={isBookmarked ? "green" : (colorScheme === "dark" ? "white" : "black")}
             />
           </TouchableOpacity>
         </View>
@@ -271,7 +270,7 @@ export default function NewsDetails() {
       {visible && (
         <ActivityIndicator
           size="large"
-          color={colorScheme === "dark" ? "white" : "gray"}
+          color={colorScheme === "dark" ? "white" : "black"}
           style={{
             position: "absolute",
             top: height / 2,

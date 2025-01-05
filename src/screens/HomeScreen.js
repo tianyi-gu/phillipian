@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "nativewind";
 import { StatusBar } from "expo-status-bar";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { Ionicons } from '@expo/vector-icons';
 import Loading from "../components/Loading/Loading";
 import Header from "../components/Header/Header";
 import NewsSection from "../components/NewsSection/NewsSection";
@@ -68,13 +69,18 @@ export default function HomeScreen() {
 
   const recommendedNews = data ? data.pages.flat() : [];
 
-  return (
-    <SafeAreaView 
-      style={{ 
-        flex: 1, 
-        backgroundColor: colorScheme === 'dark' ? '#171717' : '#ffffff'
-      }}
+  const renderNewsItem = ({ item }) => (
+    <TouchableOpacity 
+      className="flex-row items-center justify-between px-4 py-2"
+      onPress={() => navigation.navigate('NewsDetails', item)}
     >
+      <NewsSection newsProps={[item]} />
+    </TouchableOpacity>
+  );
+
+  return (
+    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">
+      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
       <View 
         style={{ 
           flex: 1,
@@ -82,7 +88,18 @@ export default function HomeScreen() {
           alignSelf: 'center'
         }}
       >
-        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+        <View style={{ width: '100%' }}>
+          <Header />
+          {isBreakingLoading ? (
+            <Loading />
+          ) : breakingNews?.length > 0 ? (
+            <>
+              <MiniHeader label="This Month's Top Stories" />
+              <BreakingNews data={breakingNews} />
+              <MiniHeader label="Recommended" />
+            </>
+          ) : null}
+        </View>
         <FlatList
           style={{ 
             flex: 1,
@@ -92,32 +109,8 @@ export default function HomeScreen() {
             paddingBottom: hp(5),
             width: '100%'
           }}
-          ListHeaderComponent={
-            <View style={{ width: '100%' }}>
-              <Header />
-              {isBreakingLoading ? (
-                <Loading />
-              ) : breakingNews?.length > 0 ? (
-                <>
-                  <MiniHeader label="This Month's Top Stories" />
-                  <BreakingNews data={breakingNews} />
-                  <MiniHeader label="Recommended" />
-                </>
-              ) : null}
-            </View>
-          }
           data={recommendedNews}
-          renderItem={({ item }) => (
-            <TouchableOpacity 
-              activeOpacity={0.7}
-              onPress={() => {
-                // Your existing navigation or press handling
-              }}
-              style={{ width: '100%' }}
-            >
-              <NewsSection newsProps={[item]} />
-            </TouchableOpacity>
-          )}
+          renderItem={renderNewsItem}
           keyExtractor={(item) => item.id.toString()}
           ListEmptyComponent={isRecommendedLoading ? <Loading /> : null}
           onEndReached={() => {

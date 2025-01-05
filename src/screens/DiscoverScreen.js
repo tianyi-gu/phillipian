@@ -7,7 +7,7 @@ import Loading from "../components/Loading/Loading";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import CategoriesCard from "../components/CategoriesCard";
 import NewsSection from "../components/NewsSection/NewsSection";
-import { MagnifyingGlassIcon } from "react-native-heroicons/outline";
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from "@react-navigation/native";
 import axios from 'axios';
 
@@ -85,9 +85,13 @@ export default function DiscoverScreen() {
 
       {/* Search Bar */}
       <View className="mx-4 mb-8 flex-row p-2 py-3 justify-between items-center bg-neutral-100 rounded-full">
-        <TouchableOpacity className="pl-2">
-          <MagnifyingGlassIcon size="25" color="gray" />
-        </TouchableOpacity>
+        <View className="pl-2">
+          <Ionicons 
+            name="search-outline"
+            size={24}
+            color={colorScheme === 'dark' ? '#666666' : '#999999'}
+          />
+        </View>
         <TextInput
           onPressIn={() => navigation.navigate("Search")}
           placeholder="Search"
@@ -121,7 +125,7 @@ export default function DiscoverScreen() {
         ) : categoryNews && categoryNews.length > 0 ? (
           <View className="flex-1">
             <NewsSection 
-              newsProps={categoryNews} 
+              newsProps={categoryNews}
               onEndReached={handleLoadMore}
               onEndReachedThreshold={0.5}
               ListFooterComponent={isFetchingNextPage ? <Loading /> : null}

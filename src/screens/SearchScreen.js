@@ -8,15 +8,16 @@ import {
 } from "react-native";
 import React, { useCallback, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
-import { XMarkIcon } from "react-native-heroicons/outline";
-import { searchWordPressNews } from "../../utils/NewsApi";
+import { Ionicons } from '@expo/vector-icons';
 import { debounce } from "lodash";
 import NewsSection from "../components/NewsSection/NewsSection";
 import { heightPercentageToDP as hp } from "react-native-responsive-screen";
 import axios from "axios";
+import { useColorScheme } from "nativewind";
 
 export default function SearchScreen() {
   const navigation = useNavigation();
+  const { colorScheme } = useColorScheme();
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
@@ -87,7 +88,11 @@ export default function SearchScreen() {
           onPress={() => navigation.navigate("Home")}
           className="pr-3"
         >
-          <XMarkIcon size="25" color="gray" strokeWidth={3} />
+          <Ionicons 
+            name="close" 
+            size={24} 
+            color={colorScheme === 'dark' ? '#666666' : '#999999'}
+          />
         </TouchableOpacity>
       </View>
 

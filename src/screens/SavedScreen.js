@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { heightPercentageToDP as hp } from "react-native-responsive-screen";
-import { BookmarkSquareIcon } from "react-native-heroicons/solid";
+import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "nativewind";
 import coverImage from '../../assets/images/plippaper.png';
@@ -133,7 +133,11 @@ export default function SavedScreen() {
 
           <View className="w-[10%] justify-center">
             <TouchableOpacity onPress={() => toggleBookmarkAndSave(item)}>
-              <BookmarkSquareIcon color="green" />
+              <Ionicons 
+                name="bookmark"
+                size={24}
+                color="green"
+              />
             </TouchableOpacity>
           </View>
         </View>

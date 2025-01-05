@@ -9,6 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "^2.1.0",
     "@react-navigation/bottom-tabs": "^6.5.9",
     "@react-navigation/material-bottom-tabs": "^6.2.17",
@@ -17,8 +18,9 @@
     "@tanstack/react-query": "^5.0.0",
     "axios": "^1.7.6",
     "expo": "~52.0.20",
-    "expo-font": "~13.0.1",
+    "expo-font": "~13.0.2",
     "expo-linear-gradient": "~14.0.1",
+    "expo-modules-core": "~2.1.2",
     "expo-splash-screen": "~0.29.18",
     "expo-status-bar": "~2.0.0",
     "lodash": "^4.17.21",
@@ -30,11 +32,12 @@
     "react-native-paper": "^5.10.6",
     "react-native-reanimated": "^3.16.6",
     "react-native-responsive-screen": "^1.4.2",
+    "react-native-safe-area-context": "4.12.0",
+    "react-native-screens": "~4.4.0",
     "react-native-snap-carousel": "^4.0.0-beta.6",
     "react-native-vector-icons": "^10.2.0",
     "react-native-webview": "^13.12.5",
-    "tailwindcss": "3.3.2",
-    "expo-modules-core": "~2.1.2"
+    "tailwindcss": "3.3.2"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",

@@ -1,13 +1,12 @@
 import { Image, TouchableOpacity, View, Dimensions } from "react-native";
 import React, { useMemo } from "react";
-import { MagnifyingGlassIcon } from "react-native-heroicons/outline";
 import { useNavigation } from "@react-navigation/native";
 import { useColorScheme } from "nativewind";
+import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get("window");
 const HEADER_SIZE = width * 0.6;
 const ICON_SIZE = 25;
-const ICON_STROKE_WIDTH = 2;
 
 export default function Header() {
   const navigation = useNavigation();
@@ -35,12 +34,12 @@ export default function Header() {
       <View className="flex-row space-x-4 rounded-full justify-center items-center">
         <TouchableOpacity
           onPress={handleSearchPress}
-          className="bg-gray-200 dark:bg-white-800 rounded-full p-2"
+          className="bg-gray-200 dark:bg-neutral-700 rounded-full p-2"
         >
-          <MagnifyingGlassIcon
+          <Ionicons 
+            name="search-outline"
             size={ICON_SIZE}
-            strokeWidth={ICON_STROKE_WIDTH}
-            color="black"
+            color={colorScheme === 'dark' ? 'white' : 'black'}
           />
         </TouchableOpacity>
       </View>

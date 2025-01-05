@@ -3,6 +3,8 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Ionicons } from "@expo/vector-icons";
+import { useColorScheme } from "nativewind";
 import HomeScreen from "../screens/HomeScreen";
 import NewsDetails from "../screens/NewsDetails";
 import WelcomeScreen from "../screens/WelcomeScreen";
@@ -10,12 +12,7 @@ import DiscoverScreen from "../screens/DiscoverScreen";
 import SavedScreen from "../screens/SavedScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import SplashScreens from "../screens/SplashScreens";
-import { Ionicons } from "@expo/vector-icons";
 import SearchScreen from "../screens/SearchScreen";
-import { useColorScheme } from "nativewind";
-
-const android = Platform.OS === "android";
-const { width: screenWidth } = Dimensions.get('window');
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -40,17 +37,14 @@ const TabNavigator = () => {
             iconName = "search-outline";
           }
 
-          const customizeSize = 25;
-
           return (
             <Ionicons
               name={iconName}
-              size={customizeSize}
+              size={24}
               color={focused ? (colorScheme === "dark" ? "white" : "black") : "gray"}
             />
           );
         },
-
         tabBarActiveTintColor: colorScheme === "dark" ? "white" : "black",
         tabBarInactiveTintColor: "gray",
         tabBarLabelStyle: {
@@ -58,26 +52,22 @@ const TabNavigator = () => {
           fontFamily: "SpaceGroteskMedium",
         },
         tabBarStyle: {
-          backgroundColor: colorScheme == "dark" ? "black" : "white",
+          backgroundColor: colorScheme === "dark" ? "black" : "white",
           borderTopWidth: 1,
           borderTopColor: colorScheme === "dark" ? "#333" : "#eee",
         },
-        tabBarButton: (props) => {
-          const { onPress, ...otherProps } = props;
-          return (
-            <TouchableOpacity
-              {...otherProps}
-              onPress={onPress}
-              activeOpacity={0.7}
-              style={{
-                flex: 1,
-                paddingVertical: 8,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            />
-          );
-        },
+        tabBarButton: (props) => (
+          <TouchableOpacity
+            {...props}
+            activeOpacity={0.7}
+            style={{
+              flex: 1,
+              paddingVertical: 8,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          />
+        ),
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
@@ -89,12 +79,32 @@ const TabNavigator = () => {
 };
 
 export default function AppNavigation() {
+  const { colorScheme } = useColorScheme();
+
   return (
     <NavigationContainer>
       <Stack.Navigator
         initialRouteName="SplashS"
         screenOptions={{
           headerShown: false,
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Ionicons 
+                name="chevron-back" 
+                size={24} 
+                color={colorScheme === "dark" ? "white" : "black"} 
+              />
+            </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <TouchableOpacity>
+              <Ionicons 
+                name="bookmark-outline" 
+                size={24} 
+                color={colorScheme === "dark" ? "white" : "black"} 
+              />
+            </TouchableOpacity>
+          )
         }}
       >
         <Stack.Screen name="SplashS" component={SplashScreens} />

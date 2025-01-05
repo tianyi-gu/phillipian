@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import React, { useCallback, useState, useMemo } from "react";
 import { View, Text, TouchableOpacity, Image, FlatList } from "react-native";
-import { BookmarkSquareIcon } from "react-native-heroicons/solid";
+import { Ionicons } from '@expo/vector-icons';
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from "react-native-responsive-screen";
 import coverImage from '../../../assets/images/plippaper.png';
 
@@ -149,7 +149,9 @@ export default function NewsSection({ newsProps, onEndReached }) {
             <TouchableOpacity
               onPress={() => toggleBookmarkAndSave(item, index)}
             >
-              <BookmarkSquareIcon
+              <Ionicons 
+                name={bookmarkStatus[index] ? "bookmark" : "bookmark-outline"}
+                size={24}
                 color={bookmarkStatus[index] ? "green" : "gray"}
               />
             </TouchableOpacity>
