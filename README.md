@@ -4,7 +4,8 @@ Welcome to _The Phillipian_ vol. CXLVII's Mobile App
 
 developed and maintained by Tianyi Gu, Managing Editor, CXLVII
 
-(to be released on iOS and Android web store)
+Recently released on the iOS App Store, available [here](https://apps.apple.com/us/app/phillipian/id6739430112)!
+
 Access _The Phillipian's_ online website [here](https://phillipian.net)!
 
 
