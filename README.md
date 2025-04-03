@@ -1,6 +1,6 @@
 # Phillipian Mobile App
 
-Welcome to _The Phillipian_ vol. CXLVII's Mobile App
+Welcome to _The Phillipian_ vol. CXLVII's Mobile App v 1.0
 
 developed and maintained by Tianyi Gu, Managing Editor, CXLVII
 
